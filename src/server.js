@@ -19,6 +19,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const config = require('./config');
 const auth = require('./auth');
+const obdWs = require('./obd-ws');
 
 const VIEWS = path.join(__dirname, 'views');
 const LOG_DIR = path.join(__dirname, '..', 'logs');
@@ -208,17 +209,33 @@ if (config.upstreamUrl) {
 
 const server = http.createServer(app);
 
-// WebSockety: przepuszczamy tylko zalogowanych (sprawdzamy ciasteczko w uchwycie upgrade).
-if (proxyMiddleware && proxyMiddleware.upgrade) {
-  server.on('upgrade', (req, socket, head) => {
+// Most OBD przez WebSocket (/obd) - pozwala diagnostyce OBD2 dzialac przez
+// zwykly link Cloudflare (bez Tailscale). Aktywny, gdy w .env jest DEVICE_PORT.
+const obd = obdWs.attach();
+if (obd.enabled) {
+  console.log('[Kluczyki Poznan] Most OBD przez WebSocket aktywny na sciezce /obd');
+}
+
+// WebSockety: obslugujemy upgrade dla mostu OBD oraz dla narzedzia (proxy).
+server.on('upgrade', (req, socket, head) => {
+  // 1) Most OBD ma wlasna autoryzacje (haslo w ?key=... lub wazna sesja).
+  if (obd.isObdUpgrade(req)) {
+    obd.handleUpgrade(req, socket, head);
+    return;
+  }
+  // 2) WebSockety narzedzia (np. panel webowy) - tylko dla zalogowanych.
+  if (proxyMiddleware && proxyMiddleware.upgrade) {
     if (!auth.isAuthenticated(req)) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
       return;
     }
     proxyMiddleware.upgrade(req, socket, head);
-  });
-}
+    return;
+  }
+  // 3) Nikt nie obsluguje tego upgrade.
+  socket.destroy();
+});
 
 server.listen(config.port, config.host, () => {
   console.log('');

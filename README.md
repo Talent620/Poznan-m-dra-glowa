@@ -159,37 +159,73 @@ wylacznie Twoje konto i urzadzenia, ktore do niego dodasz.
 
 ---
 
-## Wersja URZADZENIE — udostepnij sprzet (np. interfejs OBD2) w terenie
+## Wersja OBD przez LINK — najprostsza, dziala przez darmowy Cloudflare ✅
 
-Gdy chcesz dosiegnac nie strony, lecz **urzadzenia sieciowego** stojacego w domu
-(np. bezprzewodowy interfejs diagnostyczny OBD2), uzyj:
+> To jest rozwiazanie problemu „strona dziala, ale **OBD sie nie przekazuje**".
+
+Surowy port TCP adaptera OBD (np. WiFi/ELM327 na porcie 35000) **nie przechodzi**
+przez darmowy tunel Cloudflare, bo ten obsluguje tylko HTTP. Dlatego sama strona
+sie otwiera, ale diagnostyka nie laczy sie z autem.
+
+Rozwiazanie: opakowujemy ruch OBD w **WebSocket** (to tez HTTP), wiec idzie przez
+**ten sam darmowy link**, ktory juz masz — **bez Tailscale, bez routera**.
+
+```
+[program diagnostyczny u mechanika] --TCP--> [klient OBD na laptopie]
+        ==WSS (Twoj link Cloudflare /obd)==>  [brama w domu] --TCP--> [OBD2 w domu]
+```
+
+**W DOMU (raz):** w `.env` ustaw adres adaptera OBD i uruchom wersje dla pracownikow:
+
+```ini
+DEVICE_HOST=192.168.0.10   # adres adaptera OBD w domowej sieci (lub 127.0.0.1)
+DEVICE_PORT=35000          # port adaptera (dla WiFi OBD/ELM327 czesto 35000)
+```
+
+```powershell
+.\scripts\run.ps1            # albo plik: 2 - START dla pracownikow.bat
+```
+
+Gdy `DEVICE_PORT` jest ustawiony, brama **automatycznie** wlacza most OBD na
+sciezce `/obd` tego samego linku. Wysylasz mechanikowi **link + haslo** (jak zwykle).
+
+**W TERENIE (mechanik na laptopie):** uruchamia plik
+**`8 - Polacz OBD w terenie (mechanik).bat`** (albo `.\scripts\run-obd.ps1`),
+wkleja **link** i **haslo**. Skrypt tworzy lokalny port:
+
+```
+Adres: 127.0.0.1   Port: 35000
+```
+
+W programie diagnostycznym (A18-TES, VCDS, itp.) wybiera polaczenie **„po sieci /
+WiFi / TCP"** i wpisuje `127.0.0.1` oraz port `35000` — i laczy sie z autem tak,
+jakby adapter lezal obok.
+
+> Mechanik tez potrzebuje Node.js — wystarczy, ze raz uruchomi
+> **`1 - INSTALACJA.bat`** (instaluje Node i czesci programu).
+
+---
+
+## Wersja URZADZENIE przez Tailscale (alternatywa, prywatna siec)
+
+Gdy wolisz prywatna siec zamiast publicznego linku, mozesz udostepnic surowy port
+przez **Tailscale**:
 
 ```powershell
 .\scripts\run-device.ps1
 ```
 
-albo pliku **`7 - Udostepnij urzadzenie w terenie.bat`**.
-
-Wczesniej ustaw w `.env`:
-
-```ini
-DEVICE_HOST=192.168.0.50   # adres urzadzenia w domowej sieci (lub 127.0.0.1)
-DEVICE_PORT=35000          # port urzadzenia (dla adapterow WiFi OBD czesto 35000)
-```
-
-Jak to dziala: na serwerze startuje **most TCP** (`src/tcp-bridge.js`), ktory
-przekazuje ruch do urzadzenia, a **Tailscale** udostepnia ten port wylacznie
-w Twojej prywatnej sieci. W terenie laczysz sie programem diagnostycznym pod
-adres Tailscale serwera i podany port — tak, jakbys stal obok urzadzenia.
+albo plik **`7 - Udostepnij urzadzenie w terenie.bat`**. Wczesniej ustaw `.env`
+(`DEVICE_HOST`, `DEVICE_PORT`). Na serwerze startuje **most TCP**
+(`src/tcp-bridge.js`), a Tailscale udostepnia port wylacznie w Twojej sieci.
+Adres do wpisania w programie zapisuje sie w pliku **`DOSTEP-URZADZENIE.txt`**.
 
 ```
 [program diagnostyczny w terenie] --(Tailscale)--> [most TCP na serwerze] --> [OBD2 w domu]
 ```
 
-Adres do wpisania w programie zapisuje sie w pliku **`DOSTEP-URZADZENIE.txt`**.
-
-> Uwaga: surowy port TCP wymaga **Tailscale** (nie dziala przez darmowy tunel
-> Cloudflare, ktory obsluguje tylko HTTP/strony).
+> Ta wersja wymaga **Tailscale** na obu koncach. Jesli chcesz prosciej i przez
+> zwykly link — uzyj wersji „OBD przez LINK" powyzej.
 
 ---
 
@@ -225,6 +261,8 @@ Wylaczenie autostartu:
 | `PORT` | port lokalny bramy (domyslnie 8080) |
 | `UPSTREAM_URL` | adres Twojego narzedzia, np. `http://127.0.0.1:3000` |
 | `STATIC_DIR` | alternatywnie: folder z plikami do serwowania |
+| `DEVICE_HOST` | adres adaptera OBD w domowej sieci (np. `192.168.0.10`) |
+| `DEVICE_PORT` | port adaptera OBD (WiFi/ELM327 czesto `35000`) — ustawienie go wlacza most OBD `/obd` |
 | `ACCESS_PASSWORD` | wspolne haslo dostepu (generowane automatycznie) |
 | `SESSION_SECRET` | sekret podpisu sesji (generowany automatycznie) |
 | `SESSION_TTL_HOURS` | jak dlugo wazna jest sesja po zalogowaniu |

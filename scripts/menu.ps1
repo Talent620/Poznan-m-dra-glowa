@@ -59,9 +59,13 @@ function Show-Menu {
   Write-Host "     Dostep ma WYLACZNIE Twoje konto. Laczysz sie z dowolnego"
   Write-Host "     miejsca przez prywatna siec (Tailscale)."
   Write-Host ""
-  Write-Host "  5) URZADZENIE w terenie (np. interfejs OBD2)" -ForegroundColor White
-  Write-Host "     Udostepnia sprzet stojacy w domu. W terenie laczysz sie"
-  Write-Host "     z nim programem diagnostycznym przez prywatna siec."
+  Write-Host "  5) URZADZENIE OBD - przez prywatna siec (Tailscale)" -ForegroundColor White
+  Write-Host "     Udostepnia sprzet stojacy w domu przez prywatna siec."
+  Write-Host ""
+  Write-Host "  P) POLACZ OBD W TERENIE (mechanik) <-- gdy OBD sie nie laczy" -ForegroundColor White
+  Write-Host "     To uruchamiasz U MECHANIKA na laptopie. Wklejasz LINK + HASLO,"
+  Write-Host "     a program diagnostyczny laczysz z 127.0.0.1:35000."
+  Write-Host "     Dziala przez ZWYKLY link - bez Tailscale."
   Write-Host ""
   Write-Host "  --- DODATKI -------------------------------------------------" -ForegroundColor DarkGray
   Write-Host "  6) URUCHAMIAJ SAM PO STARCIE WINDOWS" -ForegroundColor White
@@ -126,6 +130,16 @@ while ($true) {
       Pause-Enter
     }
 
+    { $_ -in 'P','p' } {
+      Write-Host ""
+      Write-Host "Uruchamiam POLACZENIE OBD W TERENIE w nowym oknie." -ForegroundColor Cyan
+      Write-Host "Wklej LINK i HASLO od pracodawcy. Potem program diagnostyczny" -ForegroundColor Gray
+      Write-Host "podlacz do 127.0.0.1:35000." -ForegroundColor Gray
+      Write-Host "WAZNE: nowe okno ZOSTAW OTWARTE." -ForegroundColor Yellow
+      Start-InNewWindow "run-obd.ps1"
+      Pause-Enter
+    }
+
     '6' {
       Write-Host ""
       Write-Host "Ktora wersja ma uruchamiac sie SAMA po starcie Windows?" -ForegroundColor White
@@ -160,6 +174,6 @@ while ($true) {
 
     '0' { Write-Host "`nDo zobaczenia!" -ForegroundColor Cyan; break }
 
-    default { Write-Host "`nNie rozumiem '$sel'. Wpisz numer od 0 do 9." -ForegroundColor Yellow; Pause-Enter }
+    default { Write-Host "`nNie rozumiem '$sel'. Wpisz numer 0-9 albo litere P." -ForegroundColor Yellow; Pause-Enter }
   }
 }

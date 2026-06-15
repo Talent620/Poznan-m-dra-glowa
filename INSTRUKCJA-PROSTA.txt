@@ -51,10 +51,16 @@ I robi to bezpiecznie: bez grzebania w routerze, z haslem.
    z dowolnego miejsca.
    -> dobre, gdy chcesz sam korzystac poza domem.
 
-5) URZADZENIE w terenie  (np. interfejs OBD2)
-   Udostepnia SPRZET stojacy w domu/aucie. W terenie laczysz
-   sie z nim programem diagnostycznym, jakbys stal obok.
-   -> dobre dla diagnostyki samochodowej na odleglosc.
+5) URZADZENIE OBD przez prywatna siec (Tailscale)
+   Udostepnia SPRZET stojacy w domu/aucie przez prywatna siec.
+   -> dla diagnostyki na odleglosc, gdy wolisz Tailscale.
+
+P) POLACZ OBD W TERENIE (mechanik)   <-- GDY OBD SIE NIE LACZY
+   To uruchamiasz U MECHANIKA na laptopie. Wklejasz LINK i HASLO
+   (te same co do strony), a program diagnostyczny laczysz z
+   adresem  127.0.0.1  i portem  35000.
+   Dziala przez ZWYKLY darmowy link - bez Tailscale, bez routera.
+   -> to wlasnie sprawia, ze OBD sie PRZEKAZUJE.
 
 6) URUCHAMIAJ SAM PO STARCIE WINDOWS
    Po wlaczeniu komputera serwer wstanie sam i sam wroci po
@@ -122,7 +128,15 @@ komu dasz link i haslo (albo Ty, na swoim koncie).
   Inne czeste sprawy:
   * "502 - narzedzie niedostepne" -> wlacz swoj program/
     narzedzie na komputerze, potem odswiez strone.
+  * "Strona dziala, ale OBD sie NIE LACZY" ->
+      1. W DOMU: w opcji 2 ustaw urzadzenie OBD (adres + port,
+         zwykle 192.168.x.x i 35000) i uruchom tryb 3 (pracownicy).
+      2. U MECHANIKA: uruchom plik
+         "8 - Polacz OBD w terenie (mechanik).bat",
+         wklej LINK i HASLO, a program diagnostyczny podlacz
+         do 127.0.0.1 : 35000.  Teraz OBD sie przekazuje.
   * Komputer w domu musi byc WLACZONY, gdy chcesz korzystac.
+  * Adapter OBD w domu musi byc WLACZONY i w tej samej sieci WiFi.
   * Pierwsze uruchomienie moze poprosic o zalogowanie konta
     (tryb 4 i 5) - to normalne, robisz to raz.
 

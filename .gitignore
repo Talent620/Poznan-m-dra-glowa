@@ -1,0 +1,22 @@
+# Zaleznosci (instalowane przez setup.ps1 / npm install)
+node_modules/
+
+# Prywatna konfiguracja i sekrety - NIGDY do gita
+.env
+
+# Pliki generowane w trakcie dzialania
+logs/
+share-info.txt
+private-access.txt
+DOSTEP-URZADZENIE.txt
+obd-polaczenie.txt
+RAPORT-POLACZEN.html
+UDOSTEPNIJ-PRACOWNIKOM.html
+UDOSTEPNIJ-PRYWATNY.html
+
+# Narzedzie tunelu (pobierane przez setup.ps1)
+cloudflared.exe
+
+# Smieci systemowe
+Thumbs.db
+.DS_Store
