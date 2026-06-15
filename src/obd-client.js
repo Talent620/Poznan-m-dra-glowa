@@ -36,6 +36,7 @@ function log(msg) {
 
 const LINK = (process.env.OBD_LINK || '').trim();
 const KEY = (process.env.OBD_KEY || '').trim();
+const DEVICE = (process.env.OBD_DEVICE || '').trim(); // nazwa urzadzenia (opcjonalnie)
 const LOCAL_PORT = parseInt(process.env.OBD_LOCAL_PORT || '35000', 10);
 const LOCAL_HOST = (process.env.OBD_LOCAL_HOST || '127.0.0.1').trim();
 
@@ -48,22 +49,25 @@ if (!KEY) {
   process.exit(1);
 }
 
-// Zamieniamy http(s):// na ws(s):// i dopinamy sciezke /obd oraz haslo.
+// Zamieniamy http(s):// na ws(s):// i dopinamy sciezke /obd, haslo i urzadzenie.
 function buildWsUrl() {
   let base = LINK.replace(/\/+$/, '');
   if (base.startsWith('https://')) base = 'wss://' + base.slice('https://'.length);
   else if (base.startsWith('http://')) base = 'ws://' + base.slice('http://'.length);
   else base = 'wss://' + base; // sam adres bez schematu - zakladamy wss
-  return base + '/obd?key=' + encodeURIComponent(KEY);
+  let url = base + '/obd?key=' + encodeURIComponent(KEY);
+  if (DEVICE) url += '&device=' + encodeURIComponent(DEVICE);
+  return url;
 }
 
 const WS_URL = buildWsUrl();
 
 const server = net.createServer((client) => {
   const who = `${client.remoteAddress}:${client.remotePort}`;
+  client.setNoDelay(true); // male komendy OBD natychmiast (bez opoznienia Nagle'a)
   log(`Program diagnostyczny podlaczyl sie (${who}). Otwieram tunel do urzadzenia...`);
 
-  const ws = new WebSocket(WS_URL, { handshakeTimeout: 15000 });
+  const ws = new WebSocket(WS_URL, { handshakeTimeout: 15000, perMessageDeflate: false });
   let open = false;
   let closed = false;
   const pending = []; // dane, ktore przyszly zanim WS sie otworzyl
@@ -76,9 +80,20 @@ const server = net.createServer((client) => {
     try { ws.close(); } catch {}
   };
 
+  // Czytelny komunikat, gdy serwer odrzuci polaczenie (zle haslo / zajete / brak urzadzenia).
+  ws.on('unexpected-response', (_req, res) => {
+    const code = res.statusCode;
+    let why = 'serwer odrzucil polaczenie (' + code + ')';
+    if (code === 401) why = 'BLEDNE HASLO - sprawdz haslo od pracodawcy';
+    else if (code === 404) why = 'NIE MA TAKIEGO URZADZENIA - sprawdz nazwe urzadzenia';
+    else if (code === 409) why = 'URZADZENIE ZAJETE - ktos inny wlasnie z niego korzysta';
+    else if (code === 503) why = 'most OBD wylaczony na serwerze (brak urzadzen w .env)';
+    closeAll(why);
+  });
+
   ws.on('open', () => {
     open = true;
-    log('Tunel do urzadzenia otwarty - mozna diagnozowac.');
+    log(`Tunel do urzadzenia${DEVICE ? ' "' + DEVICE + '"' : ''} otwarty - mozna diagnozowac.`);
     for (const chunk of pending) ws.send(chunk, { binary: true });
     pending.length = 0;
   });
@@ -114,10 +129,10 @@ server.on('error', (e) => {
 
 server.listen(LOCAL_PORT, LOCAL_HOST, () => {
   log('============================================================');
-  log('  KLIENT OBD GOTOWY');
+  log('  KLIENT OBD GOTOWY' + (DEVICE ? ` (urzadzenie: ${DEVICE})` : ''));
   log(`  W programie diagnostycznym ustaw polaczenie sieciowe (WiFi/TCP) na:`);
   log(`     Adres: ${LOCAL_HOST}   Port: ${LOCAL_PORT}`);
-  log(`  Tunel: ${LINK}  (/obd)`);
+  log(`  Tunel: ${LINK}  (/obd${DEVICE ? '?device=' + DEVICE : ''})`);
   log('============================================================');
 });
 

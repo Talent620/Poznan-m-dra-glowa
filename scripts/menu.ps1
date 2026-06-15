@@ -82,7 +82,7 @@ function Show-Menu {
   Write-Host "================================================================" -ForegroundColor Magenta
 }
 
-while ($true) {
+:menuLoop while ($true) {
   Show-Menu
   $sel = Read-Host "Twoj wybor"
   switch ($sel.Trim()) {
@@ -172,7 +172,7 @@ while ($true) {
       Pause-Enter
     }
 
-    '0' { Write-Host "`nDo zobaczenia!" -ForegroundColor Cyan; break }
+    '0' { Write-Host "`nDo zobaczenia!" -ForegroundColor Cyan; break menuLoop }
 
     default { Write-Host "`nNie rozumiem '$sel'. Wpisz numer 0-9 albo litere P." -ForegroundColor Yellow; Pause-Enter }
   }

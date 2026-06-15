@@ -15,14 +15,16 @@
  *         v
  *   [obd-client.js na laptopie]  ==WSS (link Cloudflare)==>  [TEN most]  --TCP-->  [OBD2 w domu]
  *
- * Po stronie serwera (w domu) ten modul:
- *   1. przyjmuje polaczenie WebSocket na sciezce /obd (po autoryzacji haslem),
- *   2. otwiera surowe polaczenie TCP do urzadzenia (DEVICE_HOST:DEVICE_PORT),
- *   3. przekazuje bajty 1:1 w obie strony.
+ * Obsluguje WIELE urzadzen (patrz src/devices.js). Klient wybiera urzadzenie
+ * parametrem ?device=NAZWA. Bez parametru uzywane jest pierwsze (domyslne).
  *
- * Konfiguracja w .env:
- *   DEVICE_HOST  - adres urzadzenia w domowej sieci (np. 192.168.0.50) lub 127.0.0.1
- *   DEVICE_PORT  - port urzadzenia (np. 35000 dla adapterow WiFi OBD/ELM327)
+ * Wlasciwosci wazne dla diagnostyki OBD:
+ *   - TCP_NODELAY (setNoDelay) - male komendy ELM327 ida natychmiast (bez ~40ms
+ *     opoznienia algorytmu Nagle'a); diagnostyka jest "zywa".
+ *   - Brak kompresji WebSocket (perMessageDeflate=false) - mniejsze opoznienie.
+ *   - Blokada 1 klient na 1 urzadzenie - adaptery ELM327 (zwlaszcza klony)
+ *     przyjmuja tylko jedno polaczenie naraz; drugie zepsuloby sesje.
+ *   - Ping/pong (heartbeat) - wykrywa zerwane polaczenia i zwalnia urzadzenie.
  */
 
 const net = require('net');
@@ -31,6 +33,7 @@ const path = require('path');
 const { WebSocketServer } = require('ws');
 
 const auth = require('./auth');
+const devices = require('./devices');
 
 const LOG = path.join(__dirname, '..', 'logs', 'obd.log');
 try { fs.mkdirSync(path.dirname(LOG), { recursive: true }); } catch {}
@@ -41,17 +44,16 @@ function log(msg) {
   fs.appendFile(LOG, line + '\n', () => {});
 }
 
-const DEVICE_HOST = (process.env.DEVICE_HOST || '127.0.0.1').trim();
-const DEVICE_PORT = parseInt(process.env.DEVICE_PORT || '', 10);
-
-// Sciezka WebSocketa dla OBD (klient laczy sie pod ...trycloudflare.com/obd).
 const OBD_PATH = '/obd';
+const HEARTBEAT_MS = 20000; // co ile sekund pingujemy klienta
+
+// Ktore urzadzenia sa aktualnie zajete (nazwa -> true). 1 klient na 1 urzadzenie.
+const busy = new Set();
 
 /**
- * Sprawdza, czy zadanie WebSocket ma prawo polaczyc sie z urzadzeniem.
+ * Sprawdza, czy zadanie ma prawo polaczyc sie z urzadzeniem.
  * Akceptujemy ALBO wazna sesje (ciasteczko z przegladarki), ALBO wspolne
  * haslo podane przez klienta w parametrze ?key=... lub naglowku x-obd-key.
- * (Klient w terenie to skrypt bez przegladarki, wiec uzywa hasla.)
  */
 function isAuthorized(req) {
   if (auth.isAuthenticated(req)) return true;
@@ -69,46 +71,71 @@ function isObdUpgrade(req) {
   return p === OBD_PATH || p.startsWith(OBD_PATH + '/');
 }
 
-/**
- * Podlacza obsluge WebSocketa OBD do istniejacego serwera HTTP.
- * Zwraca obiekt z metodami handleUpgrade(req, socket, head) i enabled.
- */
+/** Nazwa urzadzenia z adresu (?device=...). */
+function deviceNameFromReq(req) {
+  try {
+    const u = new URL(req.url, 'http://localhost');
+    return u.searchParams.get('device') || '';
+  } catch { return ''; }
+}
+
+/** Lista urzadzen do pokazania klientowi (nazwa + czy zajete). */
+function listDevices() {
+  return devices.getDevices().map((d) => ({ name: d.name, busy: busy.has(d.name) }));
+}
+
 function attach() {
-  const enabled = Number.isInteger(DEVICE_PORT);
-  const wss = new WebSocketServer({ noServer: true });
+  const list = devices.getDevices();
+  const enabled = list.length > 0;
+  const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
 
   if (!enabled) {
-    log('DEVICE_PORT nie ustawiony w .env - most OBD nieaktywny (ustaw DEVICE_PORT, np. 35000).');
+    log('Brak urzadzen w .env - most OBD nieaktywny (ustaw DEVICE_PORT lub DEVICES, np. 35000).');
   } else {
-    log(`Most OBD gotowy. Klient w terenie: <link>/obd  ->  urzadzenie ${DEVICE_HOST}:${DEVICE_PORT}`);
+    log(`Most OBD gotowy. Urzadzenia: ${list.map((d) => `${d.name} -> ${d.host}:${d.port}`).join(', ')}`);
   }
 
-  wss.on('connection', (ws, req) => {
-    const who = req.socket.remoteAddress;
-    log(`Nowe polaczenie OBD od ${who} -> ${DEVICE_HOST}:${DEVICE_PORT}`);
+  // Heartbeat: regularnie pingujemy klientow; martwych zamykamy (zwalnia urzadzenie).
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (ws.isAlive === false) { try { ws.terminate(); } catch {} continue; }
+      ws.isAlive = false;
+      try { ws.ping(); } catch {}
+    }
+  }, HEARTBEAT_MS);
+  heartbeat.unref();
 
-    const tcp = net.connect(DEVICE_PORT, DEVICE_HOST);
+  wss.on('connection', (ws, req) => {
+    const device = req._obdDevice;
+    const who = req.socket.remoteAddress;
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
+
+    log(`Polaczenie OBD od ${who} -> urzadzenie "${device.name}" (${device.host}:${device.port})`);
+
+    const tcp = net.connect(device.port, device.host);
+    tcp.setNoDelay(true); // male komendy OBD natychmiast
     let closed = false;
 
     const closeAll = (reason) => {
       if (closed) return;
       closed = true;
-      log(`Zamykam polaczenie OBD ${who} (${reason})`);
+      busy.delete(device.name); // zwalniamy urzadzenie
+      log(`Zamykam OBD ${who} / "${device.name}" (${reason})`);
       try { tcp.destroy(); } catch {}
       try { ws.close(); } catch {}
     };
 
-    // Urzadzenie -> przegladarka/klient (bajty TCP jako ramki binarne WS).
+    // Urzadzenie -> klient (bajty TCP jako ramki binarne WS).
     tcp.on('data', (chunk) => {
       if (ws.readyState === ws.OPEN) ws.send(chunk, { binary: true });
     });
-    tcp.on('connect', () => log(`Polaczono z urzadzeniem ${DEVICE_HOST}:${DEVICE_PORT}`));
+    tcp.on('connect', () => log(`Polaczono z urzadzeniem "${device.name}" ${device.host}:${device.port}`));
     tcp.on('error', (e) => closeAll('blad urzadzenia: ' + e.message));
     tcp.on('close', () => closeAll('urzadzenie rozlaczone'));
 
     // Klient -> urzadzenie.
     ws.on('message', (data) => {
-      // ws moze przekazac Buffer, ArrayBuffer lub tablice fragmentow.
       let buf;
       if (Buffer.isBuffer(data)) buf = data;
       else if (Array.isArray(data)) buf = Buffer.concat(data);
@@ -119,22 +146,37 @@ function attach() {
     ws.on('close', () => closeAll('klient rozlaczony'));
   });
 
+  function rejectUpgrade(socket, code, text) {
+    socket.write(`HTTP/1.1 ${code} ${text}\r\nConnection: close\r\n\r\n`);
+    socket.destroy();
+  }
+
   function handleUpgrade(req, socket, head) {
-    if (!enabled) {
-      socket.write('HTTP/1.1 503 Service Unavailable\r\n\r\n');
-      socket.destroy();
-      return;
-    }
+    if (!enabled) return rejectUpgrade(socket, 503, 'Service Unavailable');
+
     if (!isAuthorized(req)) {
-      log('Odrzucono polaczenie OBD - bledne lub brak hasla.');
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
+      log('Odrzucono OBD - bledne lub brak hasla.');
+      return rejectUpgrade(socket, 401, 'Unauthorized');
     }
+
+    const wanted = deviceNameFromReq(req);
+    const device = devices.getByName(wanted);
+    if (!device) {
+      log(`Odrzucono OBD - nieznane urzadzenie "${wanted}". Dostepne: ${list.map((d) => d.name).join(', ')}`);
+      return rejectUpgrade(socket, 404, 'Unknown Device');
+    }
+
+    if (busy.has(device.name)) {
+      log(`Odrzucono OBD - urzadzenie "${device.name}" jest zajete przez inne polaczenie.`);
+      return rejectUpgrade(socket, 409, 'Device Busy');
+    }
+
+    busy.add(device.name);
+    req._obdDevice = device;
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
   }
 
-  return { enabled, isObdUpgrade, handleUpgrade };
+  return { enabled, isObdUpgrade, handleUpgrade, isAuthorized, listDevices };
 }
 
-module.exports = { attach, isObdUpgrade, OBD_PATH };
+module.exports = { attach, isObdUpgrade, listDevices, OBD_PATH };

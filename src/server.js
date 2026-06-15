@@ -95,10 +95,23 @@ function clientIp(req) {
   return req.ip || req.connection?.remoteAddress || 'unknown';
 }
 
+// --- Most OBD przez WebSocket (wiele urzadzen) ------------------------------
+// Pozwala diagnostyce OBD2 dzialac przez zwykly link Cloudflare (bez Tailscale).
+// Aktywny, gdy w .env sa urzadzenia (DEVICE_PORT lub DEVICES).
+const obd = obdWs.attach();
+
 // --- Endpoint zdrowia (bez autoryzacji) -------------------------------------
 
 app.get('/healthz', (req, res) => {
   res.type('text').send('ok');
+});
+
+// --- Lista urzadzen OBD (dla klienta w terenie) -----------------------------
+// Autoryzacja wspolnym haslem (?key=...) lub wazna sesja. Zwraca tylko NAZWY
+// urzadzen i czy sa zajete - bez ujawniania adresow/portow z sieci domowej.
+app.get('/obd-devices', (req, res) => {
+  if (!obd.isAuthorized(req)) return res.status(401).type('text').send('Unauthorized');
+  res.json({ enabled: obd.enabled, devices: obd.listDevices() });
 });
 
 // --- Logowanie / wylogowanie ------------------------------------------------
@@ -209,9 +222,6 @@ if (config.upstreamUrl) {
 
 const server = http.createServer(app);
 
-// Most OBD przez WebSocket (/obd) - pozwala diagnostyce OBD2 dzialac przez
-// zwykly link Cloudflare (bez Tailscale). Aktywny, gdy w .env jest DEVICE_PORT.
-const obd = obdWs.attach();
 if (obd.enabled) {
   console.log('[Kluczyki Poznan] Most OBD przez WebSocket aktywny na sciezce /obd');
 }

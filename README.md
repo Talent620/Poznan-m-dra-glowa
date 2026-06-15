@@ -175,34 +175,43 @@ Rozwiazanie: opakowujemy ruch OBD w **WebSocket** (to tez HTTP), wiec idzie prze
         ==WSS (Twoj link Cloudflare /obd)==>  [brama w domu] --TCP--> [OBD2 w domu]
 ```
 
-**W DOMU (raz):** w `.env` ustaw adres adaptera OBD i uruchom wersje dla pracownikow:
+> **Krok po kroku, bardzo prosto:** patrz plik **`JAK-POLACZYC-OBD.txt`**.
+
+**W DOMU (raz):** ustaw urzadzenia OBD przez MENU → `2` (USTAW) → możesz dodać
+**wiele urzadzen** (kilka aut/adapterow). Zapisuje sie to w `.env` jako:
 
 ```ini
-DEVICE_HOST=192.168.0.10   # adres adaptera OBD w domowej sieci (lub 127.0.0.1)
-DEVICE_PORT=35000          # port adaptera (dla WiFi OBD/ELM327 czesto 35000)
+# wiele urzadzen: nazwa=adres:port, rozdzielone srednikiem
+DEVICES=warsztat1=192.168.0.10:35000; warsztat2=192.168.0.11:35000
+# albo jedno "po staremu":
+DEVICE_HOST=192.168.0.10
+DEVICE_PORT=35000
 ```
 
-```powershell
-.\scripts\run.ps1            # albo plik: 2 - START dla pracownikow.bat
-```
+Uruchom wersje dla pracownikow (`.\scripts\run.ps1` albo **`2 - START dla
+pracownikow.bat`**). Gdy sa skonfigurowane urzadzenia, brama **automatycznie**
+wlacza most OBD na sciezce `/obd` tego samego linku. Wysylasz mechanikowi
+**link + haslo** (i nazwy urzadzen, jesli masz ich kilka).
 
-Gdy `DEVICE_PORT` jest ustawiony, brama **automatycznie** wlacza most OBD na
-sciezce `/obd` tego samego linku. Wysylasz mechanikowi **link + haslo** (jak zwykle).
+**W TERENIE (mechanik na laptopie):** uruchamia **`8 - Polacz OBD w terenie
+(mechanik).bat`** (albo `.\scripts\run-obd.ps1`), wkleja **link** i **haslo**.
+Skrypt pobiera **liste urzadzen** i pozwala wybrac jedno albo **wszystkie naraz**
+(każde dostaje swoj port: `35000`, `35001`, ...). Potem w programie diagnostycznym
+(A18-TES, VCDS, itp.) wybiera polaczenie **„po sieci / WiFi / TCP"** i wpisuje
+`127.0.0.1` oraz wskazany port.
 
-**W TERENIE (mechanik na laptopie):** uruchamia plik
-**`8 - Polacz OBD w terenie (mechanik).bat`** (albo `.\scripts\run-obd.ps1`),
-wkleja **link** i **haslo**. Skrypt tworzy lokalny port:
-
-```
-Adres: 127.0.0.1   Port: 35000
-```
-
-W programie diagnostycznym (A18-TES, VCDS, itp.) wybiera polaczenie **„po sieci /
-WiFi / TCP"** i wpisuje `127.0.0.1` oraz port `35000` — i laczy sie z autem tak,
-jakby adapter lezal obok.
+Dla diagnostyki dbamy o jakosc polaczenia: **TCP_NODELAY** (male komendy ELM327
+ida natychmiast, bez ~40 ms opoznienia Nagle'a), **brak kompresji** WebSocket,
+**blokada 1 klient na 1 urzadzenie** (adaptery ELM327 obsluguja jedno polaczenie
+naraz) oraz **ping/pong** wykrywajacy zerwane polaczenia.
 
 > Mechanik tez potrzebuje Node.js — wystarczy, ze raz uruchomi
 > **`1 - INSTALACJA.bat`** (instaluje Node i czesci programu).
+
+> ⚖️ **Licencja:** to narzedzie tylko przekazuje surowe polaczenie OBD i **nie
+> sprawdza licencji** Twojego programu diagnostycznego. Czy WOLNO go tak
+> udostepniac, zalezy od jego licencji — szczegoly w `JAK-POLACZYC-OBD.txt`
+> (sekcja o licencji). Nie obchodzimy zabezpieczen (kluczy USB, aktywacji).
 
 ---
 
@@ -261,8 +270,10 @@ Wylaczenie autostartu:
 | `PORT` | port lokalny bramy (domyslnie 8080) |
 | `UPSTREAM_URL` | adres Twojego narzedzia, np. `http://127.0.0.1:3000` |
 | `STATIC_DIR` | alternatywnie: folder z plikami do serwowania |
-| `DEVICE_HOST` | adres adaptera OBD w domowej sieci (np. `192.168.0.10`) |
-| `DEVICE_PORT` | port adaptera OBD (WiFi/ELM327 czesto `35000`) — ustawienie go wlacza most OBD `/obd` |
+| `DEVICES` | wiele urzadzen OBD: `nazwa=adres:port; nazwa2=adres2:port2` — wlacza most OBD `/obd` |
+| `DEVICE_HOST` | (alternatywa, jedno urzadzenie) adres adaptera OBD, np. `192.168.0.10` |
+| `DEVICE_PORT` | (alternatywa, jedno urzadzenie) port adaptera (WiFi/ELM327 czesto `35000`) |
+| `DEVICE_NAME` | (alternatywa) nazwa pojedynczego urzadzenia (domyslnie `domyslne`) |
 | `ACCESS_PASSWORD` | wspolne haslo dostepu (generowane automatycznie) |
 | `SESSION_SECRET` | sekret podpisu sesji (generowany automatycznie) |
 | `SESSION_TTL_HOURS` | jak dlugo wazna jest sesja po zalogowaniu |

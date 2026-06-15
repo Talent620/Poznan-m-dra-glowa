@@ -57,10 +57,12 @@ I robi to bezpiecznie: bez grzebania w routerze, z haslem.
 
 P) POLACZ OBD W TERENIE (mechanik)   <-- GDY OBD SIE NIE LACZY
    To uruchamiasz U MECHANIKA na laptopie. Wklejasz LINK i HASLO
-   (te same co do strony), a program diagnostyczny laczysz z
-   adresem  127.0.0.1  i portem  35000.
+   (te same co do strony). Jesli aut jest wiecej - wybierasz, ktore
+   (albo WSZYSTKIE naraz). Program diagnostyczny laczysz z adresem
+   127.0.0.1  i portem  35000  (kazde auto ma swoj port).
    Dziala przez ZWYKLY darmowy link - bez Tailscale, bez routera.
    -> to wlasnie sprawia, ze OBD sie PRZEKAZUJE.
+   Dokladna instrukcja krok po kroku:  JAK-POLACZYC-OBD.txt
 
 6) URUCHAMIAJ SAM PO STARCIE WINDOWS
    Po wlaczeniu komputera serwer wstanie sam i sam wroci po

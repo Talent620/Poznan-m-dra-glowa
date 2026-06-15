@@ -1,0 +1,170 @@
+##############################################################
+#                                                            #
+#     JAK POLACZYC OBD PRZEZ INTERNET  -  KROK PO KROKU      #
+#         (bardzo dokladnie, ale prosto - dla kazdego)       #
+#                                                            #
+##############################################################
+
+Sa DWIE role. Przeczytaj swoja czesc:
+
+   * SZEF / WLASCICIEL  -> komputer W DOMU, gdzie stoi adapter OBD.
+   * MECHANIK           -> laptop W TERENIE, z programem diagnostycznym.
+
+Wszystko dziala przez JEDEN zwykly link - bez Tailscale, bez ustawien routera.
+
+
+============================================================
+  W SKROCIE (jak to dziala)
+============================================================
+
+   [program diagnostyczny]  --->  [laptop mechanika]  ===internet/link===>
+   [komputer w domu]  --->  [adapter OBD w aucie]
+
+Mechanik laczy program z adresem  127.0.0.1  i portem  35000  - i steruje
+adapterem w domu tak, jakby siedzial obok auta.
+
+
+============================================================
+  CZESC A:  SZEF  (robisz to RAZ, w domu)
+============================================================
+
+KROK 1.  Zainstaluj program
+   - Rozpakuj paczke (caly folder) na komputer w domu.
+   - Kliknij dwa razy:   1 - INSTALACJA.bat
+   - Poczekaj na napis GOTOWE. Zapisz sobie HASLO, ktore sie pokaze.
+
+KROK 2.  Powiedz programowi, jakie masz adaptery OBD
+   - Kliknij dwa razy:   MENU - kliknij tutaj.bat
+   - Wpisz  2  (USTAW) i Enter.
+   - Wybierz  2  (Urzadzenie - OBD2).
+   - Dla kazdego adaptera podajesz trzy rzeczy:
+        * NAZWA   - dowolna, np.  warsztat1  albo  audi   (po niej poznasz auto)
+        * ADRES   - adres adaptera w domowej sieci, zwykle  192.168.0.10
+        * PORT    - zwykle  35000
+     (Jesli nie wiesz adresu - sprawdz w aplikacji adaptera albo zostaw 192.168.0.10.)
+   - Po kazdym urzadzeniu pyta: "Dodac kolejne? (t/n)".
+        t = dodajesz nastepne auto/adapter,  n = koniec.
+   - Mozesz dodac 1, 2, 5 albo wiecej urzadzen.
+
+KROK 3.  Wlacz udostepnianie (tworzy LINK + HASLO)
+   - W MENU wpisz  3  (DLA PRACOWNIKOW) i Enter.
+   - Otworzy sie NOWE okno - ZOSTAW JE OTWARTE (dziala, dopoki jest otwarte).
+   - Pojawi sie LINK (np. https://cos-tam.trycloudflare.com) i HASLO.
+   - To samo jest w pliku  share-info.txt  i na stronie z kodem QR.
+
+KROK 4.  Wyslij mechanikowi:
+   - LINK
+   - HASLO
+   - (jesli masz wiecej aut) NAZWY urzadzen, np. "warsztat1, audi"
+
+WAZNE:
+   - Komputer w domu i adapter OBD musza byc WLACZONE, gdy mechanik pracuje.
+   - Adapter OBD musi byc w tej samej sieci WiFi co komputer w domu.
+   - Chcesz, zeby wstawalo samo po wlaczeniu komputera? W MENU wpisz 6.
+
+
+============================================================
+  CZESC B:  MECHANIK  (w terenie, na laptopie)
+============================================================
+
+KROK 1.  Zainstaluj program (raz)
+   - Rozpakuj te sama paczke na swoj laptop.
+   - Kliknij dwa razy:   1 - INSTALACJA.bat   i poczekaj na GOTOWE.
+     (To instaluje "silnik" - Node.js. Robisz to tylko pierwszy raz.)
+
+KROK 2.  Polacz sie z OBD
+   - Kliknij dwa razy:   8 - Polacz OBD w terenie (mechanik).bat
+   - Wklej LINK  (skopiuj od szefa, klik prawym -> Wklej) i Enter.
+   - Wpisz HASLO i Enter.
+   - Jesli aut jest wiecej, program pokaze liste, np.:
+        1) warsztat1   ->  port lokalny 35000
+        2) audi        ->  port lokalny 35001
+        A) WSZYSTKIE naraz
+     Wpisz numer auta (albo A, jesli chcesz wszystkie) i Enter.
+
+KROK 3.  Zobaczysz tabelke, np.:
+        warsztat1   Adres: 127.0.0.1   Port: 35000
+   - ZOSTAW to okno otwarte.
+
+KROK 4.  W programie diagnostycznym (np. A18-TES, VCDS, Car Scanner...)
+   - Wybierz polaczenie typu  "po sieci"  /  "WiFi"  /  "TCP"  /  "Ethernet".
+   - Wpisz:
+        Adres / IP:  127.0.0.1
+        Port:        35000   (albo ten z tabelki dla wybranego auta)
+   - Polacz - i diagnozuj tak, jak na miejscu.
+
+   Jesli wybrales WSZYSTKIE auta naraz - kazde ma swoj port (35000, 35001, ...).
+   W programie po prostu wpisujesz port tego auta, ktore chcesz sprawdzic.
+
+
+============================================================
+  GDY COS NIE DZIALA  (komunikaty i co zrobic)
+============================================================
+
+"BLEDNE HASLO"
+   -> Zle haslo. Skopiuj je jeszcze raz od szefa (uwaga na duze/male litery).
+
+"NIE MA TAKIEGO URZADZENIA"
+   -> Zla nazwa auta. Uruchom plik 8 jeszcze raz i wybierz z LISTY.
+
+"URZADZENIE ZAJETE - ktos inny wlasnie z niego korzysta"
+   -> Z jednego adaptera moze korzystac jedna osoba naraz. Poczekaj, az
+      drugi mechanik skonczy, albo wybierz inne auto.
+
+"most OBD wylaczony na serwerze"
+   -> Szef nie ustawil jeszcze urzadzen. Niech zrobi CZESC A, KROK 2.
+
+Program laczy sie, ale diagnostyka nic nie pokazuje:
+   -> Sprawdz, czy komputer w domu jest wlaczony.
+   -> Sprawdz, czy adapter OBD jest wpiety do auta i swieci.
+   -> Sprawdz, czy w programie ustawiles adres 127.0.0.1 i wlasciwy port.
+
+Link przestal dzialac:
+   -> W darmowym trybie link zmienia sie po restarcie. Wez od szefa nowy link.
+      (Szef moze miec staly link - ustawienie CLOUDFLARE_TUNNEL_TOKEN, patrz README.)
+
+
+============================================================
+  A CO Z LICENCJA PROGRAMU DIAGNOSTYCZNEGO?  (wazne!)
+============================================================
+
+To narzedzie tylko PRZEKAZUJE polaczenie z adapterem OBD (surowe bajty).
+NIE zna i NIE sprawdza licencji Twojego programu diagnostycznego. Czyli:
+
+  * Technicznie - polaczenie OBD bedzie szlo niezaleznie od licencji.
+  * Prawnie - to, czy WOLNO Ci tak udostepniac program, zalezy WYLACZNIE
+    od licencji tego programu (A18-TES, VCDS, ODIS itp.).
+
+"Licencja nie pozwala" zwykle znaczy zakaz UMOWNY (prawny), a nie blokade
+techniczna. Ale uwaga - niektore programy maja wlasne zabezpieczenia, ktore
+moga sprawic, ze i tak nie zadziala albo zadziala tylko czesciowo:
+
+  * KLUCZ USB (dongle) - program dziala tylko na komputerze, gdzie jest wpiety
+    klucz. Jesli program uruchamiasz u mechanika, tam tez potrzebny jest klucz.
+  * AKTYWACJA ONLINE / licencja na 1 stanowisko - moze blokowac rownoczesne
+    uzycie albo wykryc zdalne/wspoldzielone uzycie i ZABLOKOWAC KONTO.
+  * OPLATY ZA UZYCIE / za VIN - kosztuja tak czy inaczej.
+
+Dwa tryby a licencja:
+  - Tryb "OBD przez link" (plik 8): program diagnostyczny dziala U MECHANIKA -
+    tam musi miec WLASNA, wazna licencje. Most niesie tylko sam adapter.
+  - Tryb "strona dla pracownikow" (proxy www): program dziala w JEDNYM miejscu
+    (w domu), a wielu ludzi korzysta z linku - to wlasnie wielu licencji
+    czesto ZABRANIA (jedno stanowisko = jeden uzytkownik).
+
+CO ZROBIC:
+  - Sprawdz umowe licencyjna swojego programu (szukaj slow: "remote", "share",
+    "multi-user", "per seat", "transferable").
+  - Jak masz watpliwosci - zapytaj sprzedawce/producenta programu.
+  - Nie obchodzimy zabezpieczen licencyjnych (kluczy, aktywacji) - jesli program
+    je ma, uszanuj je. Ten projekt sluzy do legalnego, autoryzowanego dostepu
+    do WLASNEGO sprzetu.
+
+
+============================================================
+  NAJWAZNIEJSZE W TRZECH ZDANIACH
+============================================================
+1. Szef w domu: INSTALACJA -> USTAW urzadzenia (opcja 2) -> START (opcja 3) ->
+   wysyla LINK i HASLO.
+2. Mechanik: INSTALACJA (raz) -> plik 8 -> wkleja LINK i HASLO -> wybiera auto.
+3. W programie diagnostycznym: adres 127.0.0.1, port 35000. Gotowe.

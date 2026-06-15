@@ -60,21 +60,44 @@ switch ($choice.Trim()) {
   }
   '2' {
     Write-Host ""
-    Write-Host "Podaj adres urzadzenia w Twojej domowej sieci." -ForegroundColor Gray
-    Write-Host "Przyklad: 192.168.0.50   (jesli nie wiesz, nacisnij Enter - uzyjemy 127.0.0.1)" -ForegroundColor Gray
-    $h = Read-Host "Adres urzadzenia"
-    if ([string]::IsNullOrWhiteSpace($h)) { $h = "127.0.0.1" }
-    Set-EnvValue "DEVICE_HOST" ($h.Trim())
-
+    Write-Host "Mozesz dodac JEDNO lub WIELE urzadzen OBD (np. kilka aut / lokalizacji)." -ForegroundColor Gray
+    Write-Host "Kazde urzadzenie dostanie nazwe - po niej rozpoznasz je w terenie." -ForegroundColor Gray
     Write-Host ""
-    Write-Host "Podaj port urzadzenia. Dla adapterow WiFi OBD czesto jest to 35000." -ForegroundColor Gray
-    $p = Read-Host "Port urzadzenia (np. 35000)"
-    if ([string]::IsNullOrWhiteSpace($p)) { $p = "35000" }
-    Set-EnvValue "DEVICE_PORT" ($p.Trim())
+
+    $devicesList = @()
+    $num = 1
+    while ($true) {
+      Write-Host "--- Urzadzenie #$num ---" -ForegroundColor Cyan
+      $name = Read-Host "Nazwa urzadzenia (np. warsztat1, audi, bus)  [Enter = urzadzenie$num]"
+      if ([string]::IsNullOrWhiteSpace($name)) { $name = "urzadzenie$num" }
+      $name = ($name.Trim() -replace '[^A-Za-z0-9_-]', '-').Trim('-')
+      if ([string]::IsNullOrWhiteSpace($name)) { $name = "urzadzenie$num" }
+
+      Write-Host "Adres urzadzenia w domowej sieci. Przyklad: 192.168.0.10" -ForegroundColor Gray
+      $h = Read-Host "Adres (Enter = 127.0.0.1)"
+      if ([string]::IsNullOrWhiteSpace($h)) { $h = "127.0.0.1" }
+
+      Write-Host "Port urzadzenia. Dla adapterow WiFi OBD / ELM327 czesto 35000." -ForegroundColor Gray
+      $p = Read-Host "Port (Enter = 35000)"
+      if ([string]::IsNullOrWhiteSpace($p)) { $p = "35000" }
+
+      $devicesList += "$name=$($h.Trim()):$($p.Trim())"
+      Write-Host "[OK] Dodano: $name -> $($h.Trim()):$($p.Trim())" -ForegroundColor Green
+      Write-Host ""
+
+      $more = Read-Host "Dodac kolejne urzadzenie? (t/n)"
+      if ($more -notmatch '^(t|tak|y|yes)$') { break }
+      $num++
+    }
+
+    Set-EnvValue "DEVICES" ($devicesList -join "; ")
+    Set-EnvValue "DEVICE_HOST" ""
+    Set-EnvValue "DEVICE_PORT" ""
     Set-EnvValue "UPSTREAM_URL" ""
 
-    Write-Host "`n[OK] Zapisano ustawienia urzadzenia ($h`:$p)." -ForegroundColor Green
-    Write-Host "Teraz w MENU wybierz: udostepnij URZADZENIE w terenie." -ForegroundColor White
+    Write-Host "`n[OK] Zapisano $($devicesList.Count) urzadzenie/urzadzen." -ForegroundColor Green
+    Write-Host "Teraz w MENU wybierz tryb 3 (DLA PRACOWNIKOW) - to wlaczy most OBD na linku." -ForegroundColor White
+    Write-Host "W terenie mechanik wybiera urzadzenie po nazwie (opcja P / plik nr 8)." -ForegroundColor White
   }
   default {
     Set-EnvValue "UPSTREAM_URL" ""
