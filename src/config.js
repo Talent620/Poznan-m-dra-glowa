@@ -47,6 +47,35 @@ config.validate = function validate() {
   if (!config.sessionSecret || config.sessionSecret.length < 16) {
     errors.push('SESSION_SECRET jest pusty lub za krotki. Uruchom scripts\\setup.ps1.');
   }
+
+  // UPSTREAM_URL (jesli podany) musi byc poprawnym adresem http(s).
+  if (config.upstreamUrl) {
+    let ok = false;
+    try {
+      const u = new URL(config.upstreamUrl);
+      ok = (u.protocol === 'http:' || u.protocol === 'https:');
+    } catch { ok = false; }
+    if (!ok) {
+      errors.push('UPSTREAM_URL ma zly format. Wpisz pelny adres, np. http://127.0.0.1:3000 (z http:// na poczatku).');
+    }
+  }
+
+  // Urzadzenia OBD: jesli cokolwiek ustawiono (DEVICES albo DEVICE_PORT),
+  // sprawdzamy, czy da sie to odczytac. Inaczej most OBD nie wystartuje po cichu.
+  const rawDevices = (process.env.DEVICES || '').trim();
+  const rawPort = (process.env.DEVICE_PORT || '').trim();
+  if (rawDevices || rawPort) {
+    let list = [];
+    try { list = require('./devices').getDevices(); } catch { list = []; }
+    if (list.length === 0) {
+      errors.push(
+        'Ustawienia urzadzen OBD (DEVICES / DEVICE_PORT) sa nieczytelne. ' +
+        'Format: nazwa=adres:port, np. auto1=192.168.0.10:35000 (kilka oddzielaj srednikiem). ' +
+        'Najprosciej ustaw je przez MENU -> opcja 2.'
+      );
+    }
+  }
+
   return errors;
 };
 

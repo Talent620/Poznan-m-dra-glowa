@@ -46,6 +46,12 @@ const server = net.createServer((client) => {
 
   const upstream = net.connect(DEVICE_PORT, DEVICE_HOST);
 
+  // Male komendy OBD natychmiast + wykrywanie zerwanego/wylaczonego adaptera.
+  client.setNoDelay(true);
+  upstream.setNoDelay(true);
+  client.setKeepAlive(true, 15000);
+  upstream.setKeepAlive(true, 15000);
+
   // Przekazujemy dane w obie strony.
   client.pipe(upstream);
   upstream.pipe(client);

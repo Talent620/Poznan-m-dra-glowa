@@ -298,9 +298,17 @@ Plik `.env` jest prywatny — nie trafia do gita i nie opuszcza Twojego komputer
 
 - Brama nasluchuje tylko na `127.0.0.1` — nie wystawiamy nic bezposrednio do internetu.
 - Caly ruch zewnetrzny idzie przez **HTTPS** (Cloudflare / Tailscale).
-- Haslo porownywane odpornie na ataki czasowe; limit prob logowania chroni przed zgadywaniem.
+- Haslo porownywane odpornie na ataki czasowe; **limit prob (lockout)** chroni przed zgadywaniem — zarowno na stronie logowania, jak i na mostie OBD (`/obd`, `/obd-devices`, `/obd-status`).
+- Haslo do OBD jedzie w **naglowku `x-obd-key`**, a nie w adresie — nie trafia do logow tunelu. (Adres `?key=...` jest nadal akceptowany dla zgodnosci wstecz, ale klient go nie uzywa.)
+- Ciasteczko sesji: `HttpOnly` + `SameSite=Lax`; flaga `Secure` dodawana **automatycznie**, gdy polaczenie idzie po HTTPS (tunel). Dzieki temu logowanie dziala tez przy **tescie lokalnym po `http://`** w sieci LAN.
+- Formularz logowania chroniony przed **CSRF** (sprawdzenie `Origin` + `SameSite=Lax`).
 - Naglowek `X-Robots-Tag: noindex` — serwis nie trafia do wyszukiwarek.
 - **Router pozostaje nietkniety** — brak otwartych portow, brak ryzyka wystawienia sieci domowej.
+
+> **Test lokalny (LAN, bez tunelu):** mozesz otworzyc `http://127.0.0.1:8080` (lub adres LAN
+> komputera) w przegladarce i zalogowac sie tym samym haslem — flaga `Secure` nie zostanie
+> wtedy dodana, wiec logowanie zadziala po zwyklym `http://`. W normalnej pracy (przez tunel
+> Cloudflare) ruch i tak idzie po HTTPS.
 
 > Uwaga prawna: udostepniajac narzedzie pracownikom upewnij sie, ze masz do tego
 > prawo (licencja narzedzia) i ze konfiguracja jest zgodna z polityka Twojej firmy.

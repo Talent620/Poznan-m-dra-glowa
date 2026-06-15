@@ -84,8 +84,8 @@ Write-Host "Sprawdzam, jakie urzadzenia sa dostepne..." -ForegroundColor Cyan
 $deviceNames = @()
 try {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-  $enc = [System.Uri]::EscapeDataString($key)
-  $resp = Invoke-RestMethod -Uri "$link/obd-devices?key=$enc" -TimeoutSec 20
+  # Haslo wysylamy w naglowku (NIE w adresie) - nie trafi do logow tunelu.
+  $resp = Invoke-RestMethod -Uri "$link/obd-devices" -Headers @{ 'x-obd-key' = $key } -TimeoutSec 20
   if ($resp.devices) { $deviceNames = @($resp.devices | ForEach-Object { $_.name }) }
 } catch {
   Write-Host "[i] Nie udalo sie pobrac listy urzadzen ($($_.Exception.Message))." -ForegroundColor Yellow

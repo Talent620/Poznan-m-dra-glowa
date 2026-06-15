@@ -33,6 +33,7 @@ const path = require('path');
 const { WebSocketServer } = require('ws');
 
 const auth = require('./auth');
+const config = require('./config');
 const devices = require('./devices');
 const { testReachable } = require('./probe');
 
@@ -64,6 +65,19 @@ function isAuthorized(req) {
     key = key || u.searchParams.get('key') || '';
   } catch { /* ignore */ }
   return auth.passwordMatches(key);
+}
+
+/**
+ * Adres IP klienta dla limitu prob (lockout). Za tunelem Cloudflare wszystkie
+ * polaczenia przychodza z 127.0.0.1, dlatego - gdy ufamy proxy - bierzemy
+ * prawdziwy adres z naglowka X-Forwarded-For (pierwszy wpis).
+ */
+function clientIp(req) {
+  if (config.trustProxy) {
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) return String(xff).split(',')[0].trim();
+  }
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
 /** Czy dany upgrade dotyczy mostu OBD? */
@@ -128,8 +142,10 @@ function attach() {
 
     log(`Polaczenie OBD od ${who} -> urzadzenie "${device.name}" (${device.host}:${device.port})`);
 
+    req._obdConnected = true; // upgrade sie udal - zwalnianiem zajmie sie closeAll
     const tcp = net.connect(device.port, device.host);
-    tcp.setNoDelay(true); // male komendy OBD natychmiast
+    tcp.setNoDelay(true);           // male komendy OBD natychmiast
+    tcp.setKeepAlive(true, 15000);  // wykryj zerwany/wylaczony adapter (martwe TCP)
     let closed = false;
 
     const closeAll = (reason) => {
@@ -169,10 +185,21 @@ function attach() {
   function handleUpgrade(req, socket, head) {
     if (!enabled) return rejectUpgrade(socket, 503, 'Service Unavailable');
 
+    const ip = clientIp(req);
+
+    // Limit prob (lockout) - tak samo jak na stronie logowania - zeby nie dalo
+    // sie zgadywac hasla przez WebSocket bez ograniczen.
+    if (auth.isLockedOut(ip)) {
+      log(`Odrzucono OBD - zbyt wiele prob z ${ip} (chwilowa blokada).`);
+      return rejectUpgrade(socket, 429, 'Too Many Requests');
+    }
+
     if (!isAuthorized(req)) {
-      log('Odrzucono OBD - bledne lub brak hasla.');
+      auth.recordFailure(ip);
+      log('Odrzucono OBD - bledne lub brak hasla.'); // nie logujemy samego hasla
       return rejectUpgrade(socket, 401, 'Unauthorized');
     }
+    auth.clearAttempts(ip); // poprawne haslo/sesja - kasujemy licznik prob
 
     const wanted = deviceNameFromReq(req);
     const device = devices.getByName(wanted);
@@ -188,6 +215,14 @@ function attach() {
 
     busy.add(device.name);
     req._obdDevice = device;
+    req._obdConnected = false;
+
+    // Zabezpieczenie: gdyby handshake padl PRZED zdarzeniem "connection"
+    // (np. klient sie rozmyslil), zwolnij urzadzenie, by nie zostalo "zajete".
+    const releaseIfUnused = () => { if (!req._obdConnected) busy.delete(device.name); };
+    socket.once('error', releaseIfUnused);
+    socket.once('close', releaseIfUnused);
+
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
   }
 

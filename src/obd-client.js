@@ -49,32 +49,53 @@ if (!KEY) {
   process.exit(1);
 }
 
-// Zamieniamy http(s):// na ws(s):// i dopinamy sciezke /obd, haslo i urzadzenie.
+// Zamieniamy http(s):// na ws(s):// i dopinamy sciezke /obd oraz urzadzenie.
+// UWAGA: hasla NIE doklejamy do adresu (moglby trafic do logow tunelu).
+// Haslo wysylamy w naglowku x-obd-key (patrz nizej, przy tworzeniu WebSocket).
 function buildWsUrl() {
   let base = LINK.replace(/\/+$/, '');
   if (base.startsWith('https://')) base = 'wss://' + base.slice('https://'.length);
   else if (base.startsWith('http://')) base = 'ws://' + base.slice('http://'.length);
   else base = 'wss://' + base; // sam adres bez schematu - zakladamy wss
-  let url = base + '/obd?key=' + encodeURIComponent(KEY);
-  if (DEVICE) url += '&device=' + encodeURIComponent(DEVICE);
+  let url = base + '/obd';
+  if (DEVICE) url += '?device=' + encodeURIComponent(DEVICE);
   return url;
 }
 
 const WS_URL = buildWsUrl();
 
+// Ile danych moze poczekac w buforze, zanim tunel sie otworzy (zabezpieczenie,
+// by pamiec nie rosla w nieskonczonosc, gdy link nie dziala).
+const MAX_PENDING_BYTES = 1 * 1024 * 1024; // 1 MB
+const OPEN_TIMEOUT_MS = 20000;             // ile czekamy na otwarcie tunelu
+
 const server = net.createServer((client) => {
   const who = `${client.remoteAddress}:${client.remotePort}`;
-  client.setNoDelay(true); // male komendy OBD natychmiast (bez opoznienia Nagle'a)
+  client.setNoDelay(true);          // male komendy OBD natychmiast (bez opoznienia Nagle'a)
+  client.setKeepAlive(true, 15000); // wykryj zerwane polaczenie programu diagnostycznego
   log(`Program diagnostyczny podlaczyl sie (${who}). Otwieram tunel do urzadzenia...`);
 
-  const ws = new WebSocket(WS_URL, { handshakeTimeout: 15000, perMessageDeflate: false });
+  // Haslo idzie w naglowku (NIE w adresie) - nie wycieknie do logow tunelu.
+  const ws = new WebSocket(WS_URL, {
+    handshakeTimeout: 15000,
+    perMessageDeflate: false,
+    headers: { 'x-obd-key': KEY },
+  });
   let open = false;
   let closed = false;
-  const pending = []; // dane, ktore przyszly zanim WS sie otworzyl
+  const pending = [];      // dane, ktore przyszly zanim WS sie otworzyl
+  let pendingBytes = 0;    // ile bajtow czeka w buforze
+
+  // Timeout: jesli tunel nie otworzy sie w rozsadnym czasie - czytelny komunikat.
+  const openTimer = setTimeout(() => {
+    if (!open) closeAll('TUNEL SIE NIE OTWORZYL w czasie - sprawdz link, internet i czy serwer w domu dziala');
+  }, OPEN_TIMEOUT_MS);
 
   const closeAll = (reason) => {
     if (closed) return;
     closed = true;
+    clearTimeout(openTimer);
+    pending.length = 0;
     log(`Rozlaczono (${reason}).`);
     try { client.destroy(); } catch {}
     try { ws.close(); } catch {}
@@ -87,15 +108,18 @@ const server = net.createServer((client) => {
     if (code === 401) why = 'BLEDNE HASLO - sprawdz haslo od pracodawcy';
     else if (code === 404) why = 'NIE MA TAKIEGO URZADZENIA - sprawdz nazwe urzadzenia';
     else if (code === 409) why = 'URZADZENIE ZAJETE - ktos inny wlasnie z niego korzysta';
+    else if (code === 429) why = 'ZA DUZO PROB - odczekaj kilka minut (chwilowa blokada)';
     else if (code === 503) why = 'most OBD wylaczony na serwerze (brak urzadzen w .env)';
     closeAll(why);
   });
 
   ws.on('open', () => {
     open = true;
+    clearTimeout(openTimer);
     log(`Tunel do urzadzenia${DEVICE ? ' "' + DEVICE + '"' : ''} otwarty - mozna diagnozowac.`);
     for (const chunk of pending) ws.send(chunk, { binary: true });
     pending.length = 0;
+    pendingBytes = 0;
   });
 
   // urzadzenie (przez serwer) -> program diagnostyczny
@@ -111,8 +135,17 @@ const server = net.createServer((client) => {
 
   // program diagnostyczny -> urzadzenie
   client.on('data', (chunk) => {
-    if (open && ws.readyState === WebSocket.OPEN) ws.send(chunk, { binary: true });
-    else pending.push(chunk);
+    if (open && ws.readyState === WebSocket.OPEN) {
+      ws.send(chunk, { binary: true });
+      return;
+    }
+    // Tunel jeszcze nieotwarty - buforujemy, ale z limitem (ochrona pamieci).
+    pendingBytes += chunk.length;
+    if (pendingBytes > MAX_PENDING_BYTES) {
+      closeAll('tunel nie otworzyl sie na czas, a danych do wyslania jest za duzo');
+      return;
+    }
+    pending.push(chunk);
   });
   client.on('error', (e) => closeAll('blad programu: ' + e.message));
   client.on('close', () => closeAll('program rozlaczyl sie'));
@@ -139,3 +172,10 @@ server.listen(LOCAL_PORT, LOCAL_HOST, () => {
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => { log(`Otrzymano ${sig}, zamykam klienta OBD.`); server.close(() => process.exit(0)); });
 }
+
+// Nadzor: pojedyncze polaczenie moze sie wysypac (zerwany tunel), ale CALY
+// klient ma dzialac dalej i przyjmowac nastepne polaczenia. Dlatego nie
+// pozwalamy, by drobny blad polozyl proces. (Powaznym restartem i tak zarzadza
+// nadzor w run-obd.ps1, ktory wznawia klienta po jego wyjsciu.)
+process.on('uncaughtException', (e) => { log('Nieoczekiwany blad (pomijam, dzialam dalej): ' + (e && e.message ? e.message : e)); });
+process.on('unhandledRejection', (e) => { log('Nieoczekiwany blad promesy (pomijam): ' + (e && e.message ? e.message : e)); });

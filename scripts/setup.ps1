@@ -79,7 +79,19 @@ if (-not $node) {
     exit 1
   }
 }
-Write-Ok ("Node.js dziala (" + (node --version) + ")")
+$nodeVer = (node --version)  # np. "v20.18.0"
+Write-Ok ("Node.js dziala (" + $nodeVer + ")")
+
+# Wymagamy Node 18 lub nowszego (program z tego korzysta).
+$nodeMajor = 0
+if ($nodeVer -match 'v(\d+)\.') { $nodeMajor = [int]$Matches[1] }
+if ($nodeMajor -gt 0 -and $nodeMajor -lt 18) {
+  Write-Warn2 "Masz starsza wersje Node.js ($nodeVer). Potrzebna jest 18 lub nowsza."
+  Write-Host  "    Zainstaluj nowa wersje LTS ze strony https://nodejs.org (same 'Dalej')," -ForegroundColor White
+  Write-Host  "    a potem kliknij '1 - INSTALACJA.bat' jeszcze raz." -ForegroundColor White
+  try { Start-Process "https://nodejs.org" } catch {}
+  exit 1
+}
 
 # --- 2. Zaleznosci programu -------------------------------------------------
 Write-Step "Instaluje czesci programu (to moze potrwac minute)"

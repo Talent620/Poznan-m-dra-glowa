@@ -36,7 +36,9 @@ function logEvent(type, req, extra = {}) {
     ts: new Date().toISOString(),
     type,
     ip: (req.ip || req.connection?.remoteAddress || 'unknown').replace('::ffff:', ''),
-    path: req.originalUrl || req.url || '',
+    // Logujemy sciezke BEZ czesci po "?" - dzieki temu zaden ewentualny
+    // sekret w adresie (np. stare ?key=...) nie trafi do pliku z logami.
+    path: (req.originalUrl || req.url || '').split('?')[0],
     ua: (req.headers['user-agent'] || '').slice(0, 200),
     ...extra,
   };
@@ -95,6 +97,39 @@ function clientIp(req) {
   return req.ip || req.connection?.remoteAddress || 'unknown';
 }
 
+// Lekka ochrona przed CSRF na formularzu logowania.
+// Jesli przegladarka przysle naglowek Origin, jego host musi zgadzac sie z
+// hostem, pod ktorym dziala brama (Host lub X-Forwarded-Host od tunelu).
+// Gdy Origin nie ma (np. dostep bezposredni, starsze przegladarki) - nie
+// blokujemy; dodatkowo chroni nas SameSite=Lax na ciasteczku sesji.
+function sameOriginPost(req) {
+  const origin = req.headers['origin'];
+  if (!origin) return true;
+  let originHost;
+  try { originHost = new URL(origin).host; } catch { return false; }
+  const candidates = [req.headers['host'], req.headers['x-forwarded-host']]
+    .filter(Boolean)
+    .map((h) => String(h).split(',')[0].trim());
+  return candidates.includes(originHost);
+}
+
+// Pomocnik dla endpointow OBD po HTTP: limit prob (lockout) wspolny z /login.
+// Zwraca true, gdy zadanie zostalo obsluzone (odrzucone) - wtedy handler konczy.
+function obdHttpAuthFails(req, res) {
+  const ip = clientIp(req);
+  if (auth.isLockedOut(ip)) {
+    res.status(429).type('text').send('Zbyt wiele prob. Sprobuj ponownie za kilka minut.');
+    return true;
+  }
+  if (auth.isAuthenticated(req) || obd.isAuthorized(req)) {
+    auth.clearAttempts(ip);
+    return false;
+  }
+  auth.recordFailure(ip);
+  res.status(401).type('text').send('Unauthorized');
+  return true;
+}
+
 // --- Most OBD przez WebSocket (wiele urzadzen) ------------------------------
 // Pozwala diagnostyce OBD2 dzialac przez zwykly link Cloudflare (bez Tailscale).
 // Aktywny, gdy w .env sa urzadzenia (DEVICE_PORT lub DEVICES).
@@ -110,15 +145,13 @@ app.get('/healthz', (req, res) => {
 // Autoryzacja wspolnym haslem (?key=...) lub wazna sesja. Zwraca tylko NAZWY
 // urzadzen i czy sa zajete - bez ujawniania adresow/portow z sieci domowej.
 app.get('/obd-devices', (req, res) => {
-  if (!obd.isAuthorized(req)) return res.status(401).type('text').send('Unauthorized');
+  if (obdHttpAuthFails(req, res)) return; // 401/429 + limit prob
   res.json({ enabled: obd.enabled, devices: obd.listDevices() });
 });
 
 // Status urzadzen z testem dostepnosci (online/offline + zajete) - dla panelu WWW.
 app.get('/obd-status', async (req, res) => {
-  if (!auth.isAuthenticated(req) && !obd.isAuthorized(req)) {
-    return res.status(401).type('text').send('Unauthorized');
-  }
+  if (obdHttpAuthFails(req, res)) return; // 401/429 + limit prob
   try {
     const list = obd.enabled ? await obd.statusDevices() : [];
     res.json({ enabled: obd.enabled, devices: list });
@@ -140,6 +173,14 @@ app.use('/login', express.urlencoded({ extended: false, limit: '4kb' }));
 app.post('/login', (req, res) => {
   const ip = clientIp(req);
 
+  // Ochrona CSRF: odrzucamy zadania z obcej strony (zly Origin).
+  if (!sameOriginPost(req)) {
+    return render(res, 'login.html', {
+      BRAND: config.brandName,
+      ERROR: errorBlock('Blad bezpieczenstwa (zle zrodlo zadania). Otworz strone logowania na nowo.'),
+    }, 403);
+  }
+
   if (auth.isLockedOut(ip)) {
     return render(res, 'login.html', {
       BRAND: config.brandName,
@@ -151,7 +192,7 @@ app.post('/login', (req, res) => {
   if (auth.passwordMatches(password)) {
     auth.clearAttempts(ip);
     logEvent('login', req); // udane logowanie
-    res.setHeader('Set-Cookie', auth.buildSessionCookie());
+    res.setHeader('Set-Cookie', auth.buildSessionCookie(req.secure));
     return res.redirect('/');
   }
 
@@ -164,7 +205,7 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-  res.setHeader('Set-Cookie', auth.clearSessionCookie());
+  res.setHeader('Set-Cookie', auth.clearSessionCookie(req.secure));
   res.redirect('/login');
 });
 
@@ -262,6 +303,16 @@ server.on('upgrade', (req, socket, head) => {
   }
   // 3) Nikt nie obsluguje tego upgrade.
   socket.destroy();
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\n[Kluczyki Poznan] Port ${config.port} jest juz zajety przez inny program.`);
+    console.error('  -> Zamknij drugi uruchomiony serwer (albo zmien PORT w pliku .env) i sprobuj ponownie.\n');
+  } else {
+    console.error('\n[Kluczyki Poznan] Blad serwera: ' + e.message + '\n');
+  }
+  process.exit(1);
 });
 
 server.listen(config.port, config.host, () => {

@@ -100,16 +100,24 @@ setInterval(() => {
 
 // --- Pomocnicze: cookie -----------------------------------------------------
 
-function buildSessionCookie() {
+// Flage "Secure" dodajemy tylko, gdy polaczenie naprawde idzie po HTTPS.
+// Dzieki temu logowanie dziala TAK SAMO przez tunel Cloudflare (HTTPS -> Secure)
+// jak i przy tescie lokalnym po http:// w sieci LAN (bez Secure, inaczej
+// przegladarka nie odeslalaby ciasteczka i logowanie "nie dzialaloby").
+function secureFlag(secure) {
+  return secure ? '; Secure' : '';
+}
+
+function buildSessionCookie(secure = true) {
   const exp = Date.now() + config.sessionTtlHours * 60 * 60 * 1000;
   const token = sign({ exp });
   const maxAge = Math.floor((exp - Date.now()) / 1000);
-  // HttpOnly + SameSite=Lax + Secure (ruch idzie przez HTTPS tunelu Cloudflare).
-  return `${COOKIE_NAME}=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax; Secure`;
+  // HttpOnly + SameSite=Lax (+ Secure gdy HTTPS).
+  return `${COOKIE_NAME}=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secureFlag(secure)}`;
 }
 
-function clearSessionCookie() {
-  return `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure`;
+function clearSessionCookie(secure = true) {
+  return `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureFlag(secure)}`;
 }
 
 function readCookie(req, name) {
