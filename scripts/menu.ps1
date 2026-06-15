@@ -50,6 +50,10 @@ function Show-Menu {
   Write-Host "     Pyta prostym jezykiem (narzedzie/strona czy urzadzenie OBD)"
   Write-Host "     i sam zapisuje ustawienia."
   Write-Host ""
+  Write-Host "  Z) ZNAJDZ ADAPTER OBD w sieci" -ForegroundColor White
+  Write-Host "     Sam wyszukuje adres i port adaptera (np. AIR OBD2 / ELM327)"
+  Write-Host "     w Twojej sieci domowej - nie musisz znac numerow."
+  Write-Host ""
   Write-Host "  --- UDOSTEPNIANIE (wybierz jeden tryb) ----------------------" -ForegroundColor DarkGray
   Write-Host "  3) DLA PRACOWNIKOW (przez przegladarke)" -ForegroundColor White
   Write-Host "     Tworzy LINK + HASLO + kod QR. Wysylasz pracownikom, oni"
@@ -130,6 +134,15 @@ function Show-Menu {
       Pause-Enter
     }
 
+    { $_ -in 'Z','z' } {
+      Write-Host ""
+      Write-Host "Szukam adaptera OBD w Twojej sieci domowej (chwila)..." -ForegroundColor Cyan
+      & node (Join-Path $Root "src\scan-obd.js")
+      Write-Host ""
+      Write-Host "Jesli cos znalazl - wpisz 2 (USTAW) i podaj ten adres oraz port." -ForegroundColor Gray
+      Pause-Enter
+    }
+
     { $_ -in 'P','p' } {
       Write-Host ""
       Write-Host "Uruchamiam POLACZENIE OBD W TERENIE w nowym oknie." -ForegroundColor Cyan
@@ -174,6 +187,6 @@ function Show-Menu {
 
     '0' { Write-Host "`nDo zobaczenia!" -ForegroundColor Cyan; break menuLoop }
 
-    default { Write-Host "`nNie rozumiem '$sel'. Wpisz numer 0-9 albo litere P." -ForegroundColor Yellow; Pause-Enter }
+    default { Write-Host "`nNie rozumiem '$sel'. Wpisz numer 0-9 albo litere P/Z." -ForegroundColor Yellow; Pause-Enter }
   }
 }

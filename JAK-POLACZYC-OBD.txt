@@ -40,8 +40,13 @@ KROK 2.  Powiedz programowi, jakie masz adaptery OBD
    - Dla kazdego adaptera podajesz trzy rzeczy:
         * NAZWA   - dowolna, np.  warsztat1  albo  audi   (po niej poznasz auto)
         * ADRES   - adres adaptera w domowej sieci, zwykle  192.168.0.10
-        * PORT    - zwykle  35000
-     (Jesli nie wiesz adresu - sprawdz w aplikacji adaptera albo zostaw 192.168.0.10.)
+        * PORT    - 35000 (adaptery WiFi ELM327) albo 13400 (DoIP, np. AIR OBD2)
+
+   NIE ZNASZ ADRESU/PORTU?  Program znajdzie je sam:
+   - Kliknij dwa razy:  9 - Znajdz adapter OBD.bat
+     (albo w MENU wpisz  Z ).  Pokaze np. "Znaleziono: 192.168.0.10:35000".
+     Przepisz to potem w opcji 2 (USTAW).
+   - Adapter musi byc wpiety do auta, wlaczony i w tej samej sieci WiFi.
    - Po kazdym urzadzeniu pyta: "Dodac kolejne? (t/n)".
         t = dodajesz nastepne auto/adapter,  n = koniec.
    - Mozesz dodac 1, 2, 5 albo wiecej urzadzen.
@@ -56,6 +61,12 @@ KROK 4.  Wyslij mechanikowi:
    - LINK
    - HASLO
    - (jesli masz wiecej aut) NAZWY urzadzen, np. "warsztat1, audi"
+
+PODGLAD (panel):
+   - Po otwarciu LINKU w przegladarce (i wpisaniu hasla) zobaczysz PANEL:
+     liste swoich urzadzen z kropka zielona (online) lub czerwona (offline)
+     oraz informacja, czy ktos akurat z danego adaptera korzysta ("zajete").
+     Dobry sposob, by szybko sprawdzic, czy wszystko stoi gotowe.
 
 WAZNE:
    - Komputer w domu i adapter OBD musza byc WLACZONE, gdy mechanik pracuje.

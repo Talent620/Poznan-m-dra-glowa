@@ -34,6 +34,7 @@ const { WebSocketServer } = require('ws');
 
 const auth = require('./auth');
 const devices = require('./devices');
+const { testReachable } = require('./probe');
 
 const LOG = path.join(__dirname, '..', 'logs', 'obd.log');
 try { fs.mkdirSync(path.dirname(LOG), { recursive: true }); } catch {}
@@ -82,6 +83,20 @@ function deviceNameFromReq(req) {
 /** Lista urzadzen do pokazania klientowi (nazwa + czy zajete). */
 function listDevices() {
   return devices.getDevices().map((d) => ({ name: d.name, busy: busy.has(d.name) }));
+}
+
+/**
+ * Status urzadzen z aktywnym testem dostepnosci (czy adapter odpowiada w sieci
+ * domowej) + czy jest zajety. Uzywane przez panel WWW. Zwraca Promise.
+ */
+async function statusDevices() {
+  const list = devices.getDevices();
+  const out = await Promise.all(list.map(async (d) => ({
+    name: d.name,
+    online: await testReachable(d.host, d.port, 1200),
+    busy: busy.has(d.name),
+  })));
+  return out;
 }
 
 function attach() {
@@ -176,7 +191,7 @@ function attach() {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
   }
 
-  return { enabled, isObdUpgrade, handleUpgrade, isAuthorized, listDevices };
+  return { enabled, isObdUpgrade, handleUpgrade, isAuthorized, listDevices, statusDevices };
 }
 
 module.exports = { attach, isObdUpgrade, listDevices, OBD_PATH };

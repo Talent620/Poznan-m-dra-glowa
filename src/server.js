@@ -114,6 +114,19 @@ app.get('/obd-devices', (req, res) => {
   res.json({ enabled: obd.enabled, devices: obd.listDevices() });
 });
 
+// Status urzadzen z testem dostepnosci (online/offline + zajete) - dla panelu WWW.
+app.get('/obd-status', async (req, res) => {
+  if (!auth.isAuthenticated(req) && !obd.isAuthorized(req)) {
+    return res.status(401).type('text').send('Unauthorized');
+  }
+  try {
+    const list = obd.enabled ? await obd.statusDevices() : [];
+    res.json({ enabled: obd.enabled, devices: list });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // --- Logowanie / wylogowanie ------------------------------------------------
 
 app.get('/login', (req, res) => {
@@ -210,6 +223,10 @@ if (config.upstreamUrl) {
     MODE: `Serwuje pliki z: ${dir}`,
   }));
   console.log(`[Kluczyki Poznan] Serwuje pliki statyczne z: ${dir}`);
+} else if (obd.enabled) {
+  // Brak narzedzia webowego, ale sa urzadzenia OBD -> pokaz panel OBD.
+  app.get('*', (req, res) => render(res, 'panel.html', { BRAND: config.brandName }));
+  console.log('[Kluczyki Poznan] Tryb panelu OBD (podglad urzadzen).');
 } else {
   app.get('*', (req, res) => render(res, 'landing.html', {
     BRAND: config.brandName,

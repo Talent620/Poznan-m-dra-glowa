@@ -64,6 +64,15 @@ switch ($choice.Trim()) {
     Write-Host "Kazde urzadzenie dostanie nazwe - po niej rozpoznasz je w terenie." -ForegroundColor Gray
     Write-Host ""
 
+    $find = Read-Host "Poszukac adaptera w sieci automatycznie? (t/n)"
+    if ($find -match '^(t|tak|y|yes)$') {
+      Write-Host "Szukam adaptera OBD (chwila)..." -ForegroundColor Cyan
+      try { & node (Join-Path $Root "src\scan-obd.js") } catch { Write-Host "Nie udalo sie uruchomic skanera." -ForegroundColor Yellow }
+      Write-Host ""
+      Write-Host "Przepisz znaleziony adres i port ponizej (lub wpisz wlasne)." -ForegroundColor Gray
+      Write-Host ""
+    }
+
     $devicesList = @()
     $num = 1
     while ($true) {

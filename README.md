@@ -205,6 +205,17 @@ ida natychmiast, bez ~40 ms opoznienia Nagle'a), **brak kompresji** WebSocket,
 **blokada 1 klient na 1 urzadzenie** (adaptery ELM327 obsluguja jedno polaczenie
 naraz) oraz **ping/pong** wykrywajacy zerwane polaczenia.
 
+**Nie znasz adresu/portu adaptera?** Uruchom **`9 - Znajdz adapter OBD.bat`**
+(albo `node src/scan-obd.js`). Skaner przeszukuje siec domowa i typowe porty
+diagnostyczne — **`35000`** (WiFi ELM327) i **`13400`** (DoIP, np. AIR OBD2 i inne
+bramy) — i podaje gotowy wpis `DEVICES=...`.
+
+**Panel OBD (interfejs):** gdy skonfigurujesz urzadzenia, po otwarciu linku
+w przegladarce (i zalogowaniu) widzisz **panel** z lista urzadzen, statusem
+**online/offline** (aktywny test dostepnosci) i **zajete/wolne** — odswiezany na
+biezaco. Endpointy: `GET /obd-devices` (nazwy + zajetosc) i `GET /obd-status`
+(status z testem dostepnosci), oba chronione haslem/sesja.
+
 > Mechanik tez potrzebuje Node.js — wystarczy, ze raz uruchomi
 > **`1 - INSTALACJA.bat`** (instaluje Node i czesci programu).
 
