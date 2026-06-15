@@ -1,0 +1,136 @@
+##########################################################
+#                                                        #
+#            Kluczyki Poznań mądra głowa  -  PROSTA INSTRUKCJA               #
+#         (dla kazdego, bez znajomosci komputera)        #
+#                                                        #
+##########################################################
+
+
+--------------------------------------------------------
+  NAJWAZNIEJSZE ZDANIE
+--------------------------------------------------------
+Wszystko robisz z JEDNEGO miejsca. Kliknij dwa razy plik:
+
+        >>>   MENU - kliknij tutaj.bat   <<<
+
+Otworzy sie czarne okno z LISTA. Wpisujesz numer, naciskasz
+Enter - i tyle. Niczego nie zepsujesz, mozesz probowac.
+
+
+--------------------------------------------------------
+  CO TO W OGOLE ROBI?
+--------------------------------------------------------
+Sprawia, ze cos, co masz w domu na komputerze (program,
+strona albo urzadzenie jak interfejs OBD2), moze byc
+uzywane ZDALNIE - przez Ciebie w terenie albo przez Twojego
+pracownika - tak, jakbyscie siedzieli przy tym komputerze.
+
+I robi to bezpiecznie: bez grzebania w routerze, z haslem.
+
+
+--------------------------------------------------------
+  CO ZNACZY KAZDA OPCJA W MENU (po kolei)
+--------------------------------------------------------
+
+1) ZAINSTALUJ / NAPRAW
+   Pobiera i ustawia wszystko, co potrzebne. Kliknij to przy
+   PIERWSZYM razie. I zawsze, gdy cos nie dziala - mozna
+   powtarzac bez obaw, nic nie popsuje. Pokaze Twoje HASLO.
+
+2) USTAW, CO CHCESZ UDOSTEPNIC
+   Zapyta prostym jezykiem: czy chcesz udostepnic strone/
+   program, czy urzadzenie (np. OBD2). Sam zapisze ustawienia.
+
+3) DLA PRACOWNIKOW  (przez przegladarke)
+   Robi LINK + HASLO + kod QR. Wysylasz to pracownikowi.
+   On otwiera link w przegladarce, wpisuje haslo i korzysta.
+   -> dobre, gdy kilka osob ma uzywac tego samego.
+
+4) TYLKO JA - zdalnie z domu  (przez przegladarke)
+   Dostep masz WYLACZNIE Ty (Twoje konto). Laczysz sie
+   z dowolnego miejsca.
+   -> dobre, gdy chcesz sam korzystac poza domem.
+
+5) URZADZENIE w terenie  (np. interfejs OBD2)
+   Udostepnia SPRZET stojacy w domu/aucie. W terenie laczysz
+   sie z nim programem diagnostycznym, jakbys stal obok.
+   -> dobre dla diagnostyki samochodowej na odleglosc.
+
+6) URUCHAMIAJ SAM PO STARCIE WINDOWS
+   Po wlaczeniu komputera serwer wstanie sam i sam wroci po
+   awarii. Klikasz raz i masz spokoj.
+
+7) POKAZ, KTO SIE LACZYL
+   Otwiera ladny raport: ile bylo wejsc, logowan, z jakich
+   adresow i kiedy ostatnio.
+
+8) WYLACZ auto-uruchamianie
+   Cofa opcje 6.
+
+9) POMOC
+   Otwiera te instrukcje.
+
+0) ZAMKNIJ MENU
+
+
+--------------------------------------------------------
+  JAK TO DZIALA? (obrazek slowami)
+--------------------------------------------------------
+   TWOJ DOM (komputer)              TY / PRACOWNIK W TERENIE
+   +-----------------+   bezpieczny  +--------------------+
+   | program / OBD2  |===  tunel  ===|  przegladarka albo |
+   +-----------------+               |  program na laptop |
+                                     +--------------------+
+Nikt z zewnatrz nie widzi Twojego domu. Wchodzi tylko ten,
+komu dasz link i haslo (albo Ty, na swoim koncie).
+
+
+--------------------------------------------------------
+  PROSTA SCIEZKA - KROK PO KROKU (odhaczaj)
+--------------------------------------------------------
+  [ ] 1. Kliknij dwa razy "MENU - kliknij tutaj.bat".
+  [ ] 2. W menu wpisz 1 (ZAINSTALUJ) i poczekaj na GOTOWE.
+         ZAPISZ haslo, ktore sie pokaze.
+  [ ] 3. W menu wpisz 2 (USTAW) i odpowiedz na pytania.
+  [ ] 4. W menu wybierz swoj tryb:
+            3 = dla pracownikow
+            4 = tylko ja
+            5 = urzadzenie w terenie
+  [ ] 5. Otworzy sie NOWE okno - ZOSTAW JE OTWARTE.
+         Tam bedzie link/haslo albo adres do wpisania.
+  [ ] 6. (Opcjonalnie) w menu wpisz 6, by wstawalo samo.
+
+
+--------------------------------------------------------
+  CO WYSLAC PRACOWNIKOWI (gotowiec)
+--------------------------------------------------------
+  "Czesc! Otworz ten link:
+   <TU LINK>
+   Haslo: <TU HASLO>
+   Wpisz haslo i korzystaj. Gotowe!"
+
+  Link i haslo masz zawsze w pliku  share-info.txt
+  i na stronie  UDOSTEPNIJ-PRACOWNIKOM.html (otwiera sie sama).
+
+
+--------------------------------------------------------
+  GDY COS NIE DZIALA - JEDNA ZASADA
+--------------------------------------------------------
+  Otworz MENU i wpisz 1 (ZAINSTALUJ / NAPRAW).
+  To naprawia wiekszosc problemow. Mozna klikac wiele razy.
+
+  Inne czeste sprawy:
+  * "502 - narzedzie niedostepne" -> wlacz swoj program/
+    narzedzie na komputerze, potem odswiez strone.
+  * Komputer w domu musi byc WLACZONY, gdy chcesz korzystac.
+  * Pierwsze uruchomienie moze poprosic o zalogowanie konta
+    (tryb 4 i 5) - to normalne, robisz to raz.
+
+
+--------------------------------------------------------
+  WAZNE NA KONIEC
+--------------------------------------------------------
+Jesli udostepniasz platny program pracownikom, sprawdz, czy
+jego licencja na to pozwala. Reszte program zalatwia za Ciebie.
+
+Powodzenia! :)

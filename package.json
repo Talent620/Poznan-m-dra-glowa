@@ -1,0 +1,20 @@
+{
+  "name": "reklama-gateway",
+  "version": "1.0.0",
+  "description": "Autonomiczny serwer-brama: udostepnia narzedzie webowe pracownikom przez bezpieczny tunel Cloudflare, z jednym wspolnym haslem (bez kont).",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.3",
+    "qrcode": "^1.5.4"
+  },
+  "license": "MIT"
+}

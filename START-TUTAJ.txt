@@ -1,0 +1,22 @@
+========================================================
+  Kluczyki Poznań mądra głowa - ZACZNIJ TUTAJ
+========================================================
+
+To naprawde proste. Zrob jedna rzecz:
+
+   >>>  Kliknij dwa razy plik:  "MENU - kliknij tutaj.bat"  <<<
+
+Otworzy sie okno z LISTA opcji. Wpisujesz numer, Enter - gotowe.
+
+Pierwszy raz:
+   1. W menu wpisz  1  (ZAINSTALUJ) - poczekaj na GOTOWE, zapisz haslo.
+   2. W menu wpisz  2  (USTAW) - odpowiedz na proste pytania.
+   3. W menu wybierz tryb:  3 = pracownicy,  4 = tylko ja,  5 = urzadzenie.
+
+Gdy cos nie dziala:
+   W menu wpisz  1  jeszcze raz - to naprawia wiekszosc rzeczy.
+
+Pelne, spokojne wyjasnienie wszystkiego znajdziesz w pliku:
+   INSTRUKCJA-PROSTA.txt
+
+========================================================
