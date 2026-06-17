@@ -14,12 +14,26 @@ Obie wersje korzystaja z tej samej bramy i tego samego pliku `.env`. Mozesz miec
 
 ---
 
-## Najprosciej: jedno MENU (polecane dla osob nietechnicznych)
+## Najprosciej: jeden plik (dziala nawet dla zupelnie poczatkujacych) ✅
+
+Kliknij dwa razy **`0 - KLIKNIJ TUTAJ (zacznij od tego).bat`**. Otworzy sie **kreator**,
+ktory zadaje tylko jedno pytanie — kim jestes:
+
+- **1 = JESTEM W DOMU** — chce udostepnic auto/adapter mechanikowi,
+- **2 = JESTEM W TERENIE** — mam link i haslo, lacze sie z autem.
+
+Reszte kreator robi **sam**: przy pierwszym razie **sam sie instaluje**, **sam znajduje
+adapter OBD** w sieci, **sam uruchamia** udostepnianie i **pokazuje LINK + HASLO + kod QR**.
+Nie trzeba niczego wpisywac z palca ani znac adresow. Gdy cos nie dziala — kliknij ten sam
+plik jeszcze raz, nic nie zepsujesz.
+
+## Dla zaawansowanych: pelne MENU
 
 Kliknij dwa razy **`MENU - kliknij tutaj.bat`**. Otworzy sie lista opcji
 (instalacja, ustawienia, trzy tryby udostepniania, autostart, raport) — wybierasz
-numer i Enter. Kazda pozycja ma opis, co robi. Gdy cos nie dziala — wybierz
-opcje **1 (ZAINSTALUJ / NAPRAW)**, mozna powtarzac bez obaw.
+numer i Enter. Kazda pozycja ma opis, co robi. Jesli cos nie jest zainstalowane, menu
+**samo to doinstaluje**. Gdy cos nie dziala — wybierz opcje **1 (ZAINSTALUJ / NAPRAW)**,
+mozna powtarzac bez obaw.
 
 Konfigurator (opcja 2 w menu) pyta prostym jezykiem, co chcesz udostepnic, i sam
 zapisuje ustawienia — **nie trzeba recznie edytowac pliku `.env`**.

@@ -2,21 +2,27 @@
   Kluczyki Poznań mądra głowa - ZACZNIJ TUTAJ
 ========================================================
 
-To naprawde proste. Zrob jedna rzecz:
+To naprawde proste. Zrob JEDNA rzecz:
 
-   >>>  Kliknij dwa razy plik:  "MENU - kliknij tutaj.bat"  <<<
+   >>>  Kliknij dwa razy plik:                       <<<
+   >>>  "0 - KLIKNIJ TUTAJ (zacznij od tego).bat"    <<<
 
-Otworzy sie okno z LISTA opcji. Wpisujesz numer, Enter - gotowe.
+Otworzy sie kreator. Wybierasz tylko, kim jestes:
 
-Pierwszy raz:
-   1. W menu wpisz  1  (ZAINSTALUJ) - poczekaj na GOTOWE, zapisz haslo.
-   2. W menu wpisz  2  (USTAW) - odpowiedz na proste pytania.
-   3. W menu wybierz tryb:  3 = pracownicy,  4 = tylko ja,  5 = urzadzenie.
+   1 = JESTEM W DOMU      (chce udostepnic auto mechanikowi)
+   2 = JESTEM W TERENIE   (mam link i haslo, lacze sie z autem)
+
+Reszte program zrobi SAM:
+   - sam sie zainstaluje (przy pierwszym razie),
+   - sam znajdzie adapter OBD,
+   - sam pokaze LINK + HASLO (i kod QR do zeskanowania telefonem).
 
 Gdy cos nie dziala:
-   W menu wpisz  1  jeszcze raz - to naprawia wiekszosc rzeczy.
+   Kliknij ten sam plik jeszcze raz. Nic nie zepsujesz.
 
-Pelne, spokojne wyjasnienie wszystkiego znajdziesz w pliku:
+--------------------------------------------------------
+Dla zaawansowanych:
+   "MENU - kliknij tutaj.bat"  - pelna lista opcji.
+Pelne, spokojne wyjasnienie wszystkiego:
    INSTRUKCJA-PROSTA.txt
-
 ========================================================

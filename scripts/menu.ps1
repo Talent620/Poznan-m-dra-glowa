@@ -29,6 +29,15 @@ function Is-Installed {
   return (Test-Path (Join-Path $Root "node_modules")) -and (Test-Path (Join-Path $Root ".env"))
 }
 
+# Gdy cos nie jest zainstalowane - instalujemy SAMI (zamiast odsylac do opcji 1).
+# Zwraca $true, gdy mozna isc dalej.
+function Ensure-Installed {
+  if (Is-Installed) { return $true }
+  Write-Host "`nWyglada na pierwsze uruchomienie - instaluje wszystko za Ciebie (1-2 min)..." -ForegroundColor Cyan
+  & (Join-Path $Root "scripts\setup.ps1")
+  return (Is-Installed)
+}
+
 function Show-Menu {
   Clear-Host
   Write-Host "================================================================" -ForegroundColor Magenta
@@ -102,7 +111,7 @@ function Show-Menu {
     }
 
     '3' {
-      if (-not (Is-Installed)) { Write-Host "`nNajpierw wybierz opcje 1 (ZAINSTALUJ)." -ForegroundColor Yellow; Pause-Enter; continue }
+      if (-not (Ensure-Installed)) { Write-Host "`nInstalacja sie nie powiodla - sprobuj opcji 1." -ForegroundColor Yellow; Pause-Enter; continue }
       Write-Host ""
       Write-Host "Uruchamiam tryb DLA PRACOWNIKOW w nowym oknie." -ForegroundColor Cyan
       Write-Host "W nowym oknie pojawi sie LINK + HASLO i otworzy sie strona z kodem QR." -ForegroundColor Gray
@@ -112,7 +121,7 @@ function Show-Menu {
     }
 
     '4' {
-      if (-not (Is-Installed)) { Write-Host "`nNajpierw wybierz opcje 1 (ZAINSTALUJ)." -ForegroundColor Yellow; Pause-Enter; continue }
+      if (-not (Ensure-Installed)) { Write-Host "`nInstalacja sie nie powiodla - sprobuj opcji 1." -ForegroundColor Yellow; Pause-Enter; continue }
       Write-Host ""
       Write-Host "Uruchamiam tryb TYLKO JA w nowym oknie." -ForegroundColor Cyan
       Write-Host "Przy pierwszym razie zaloguj sie swoim kontem (otworzy sie przegladarka)." -ForegroundColor Gray
@@ -122,8 +131,8 @@ function Show-Menu {
     }
 
     '5' {
-      if (-not (Is-Installed)) { Write-Host "`nNajpierw wybierz opcje 1 (ZAINSTALUJ)." -ForegroundColor Yellow; Pause-Enter; continue }
-      if ([string]::IsNullOrWhiteSpace((Get-EnvValue "DEVICE_PORT"))) {
+      if (-not (Ensure-Installed)) { Write-Host "`nInstalacja sie nie powiodla - sprobuj opcji 1." -ForegroundColor Yellow; Pause-Enter; continue }
+      if ([string]::IsNullOrWhiteSpace((Get-EnvValue "DEVICE_PORT")) -and [string]::IsNullOrWhiteSpace((Get-EnvValue "DEVICES"))) {
         Write-Host "`nNajpierw wybierz opcje 2 i ustaw urzadzenie (port)." -ForegroundColor Yellow; Pause-Enter; continue
       }
       Write-Host ""

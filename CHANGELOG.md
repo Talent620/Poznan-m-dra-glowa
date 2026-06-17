@@ -2,6 +2,18 @@
 
 Lista zmian. Najnowsze na gorze.
 
+## Maksymalne uproszczenie obslugi („zeby dziecko dalo rade")
+
+- Nowy **kreator** (`scripts/kreator.ps1`) + jeden plik startowy
+  **`0 - KLIKNIJ TUTAJ (zacznij od tego).bat`**: zadaje tylko jedno pytanie
+  („w domu" czy „w terenie"), a reszte robi sam — instaluje przy pierwszym razie,
+  automatycznie **znajduje adapter OBD** w sieci, ustawia go i uruchamia
+  udostepnianie (LINK + HASLO + kod QR). Zero recznego wpisywania adresow.
+- `menu.ps1`: zamiast odsylac do „najpierw opcja 1", **samo doinstalowuje** brakujace
+  rzeczy (brak slepych zaulkow). Opcja 5 (urzadzenie przez Tailscale) rozpoznaje teraz
+  tez wpis `DEVICES`, nie tylko `DEVICE_PORT`.
+- Zaktualizowany `START-TUTAJ.txt` i README — prowadza do jednego pliku startowego.
+
 ## Naprawa i wzmocnienie (audyt OBD przez link)
 
 ### Bezpieczenstwo
