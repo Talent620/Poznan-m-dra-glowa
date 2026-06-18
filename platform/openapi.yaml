@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: Platforma Zdalnego Dostepu Diagnostycznego — Control Plane API
+  version: 0.1.0-draft
+  description: >
+    Kontrakt REST control-plane (zarzadzanie). Strumien danych (raw bytes) idzie
+    osobnym kanalem (WSS/gRPC do Relay), NIE przez to API. Szkielet — pelna
+    implementacja w apps/control-plane (NestJS) wg roadmapy M1.
+servers:
+  - url: https://api.example.com/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Logowanie (email + haslo) — zwraca challenge MFA lub tokeny
+      security: []
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/TokenPair' } } } }
+        '401': { description: Bledne dane }
+        '429': { description: Zbyt wiele prob (rate limit / lockout) }
+  /auth/mfa/verify:
+    post:
+      summary: Weryfikacja kodu TOTP (MFA)
+      security: []
+      responses: { '200': { description: Tokeny }, '401': { description: Zly kod } }
+  /auth/refresh:
+    post: { summary: Odswiezenie access tokenu, responses: { '200': { description: Nowa para tokenow } } }
+
+  /tenants/{tenantId}/devices:
+    get:
+      summary: Lista urzadzen (RBAC; klient widzi tylko przydzielone)
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      responses: { '200': { description: Lista, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Device' } } } } } }
+    post:
+      summary: Rejestracja urzadzenia (konektor + konfiguracja)
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      responses: { '201': { description: Utworzono } }
+
+  /tenants/{tenantId}/sessions:
+    get:
+      summary: Historia/aktywne sesje (filtry, paginacja) — zrodlo dashboardu
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      responses: { '200': { description: Lista sesji } }
+  /tenants/{tenantId}/sessions/export:
+    get:
+      summary: Eksport sesji CSV/PDF
+      parameters:
+        - { $ref: '#/components/parameters/TenantId' }
+        - { name: format, in: query, schema: { type: string, enum: [csv, pdf] } }
+      responses: { '200': { description: Plik } }
+
+  /tenants/{tenantId}/access-tokens:
+    post:
+      summary: Wygeneruj dostep dla KLIENTA (Tryb C) — link + QR + kod, z TTL
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      responses: { '201': { description: Kod dostepu, content: { application/json: { schema: { $ref: '#/components/schemas/AccessToken' } } } } }
+
+  /tenants/{tenantId}/licenses:
+    get: { summary: Licencje platformy (lokalne/sieciowe/token/klucz), parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '200': { description: Lista } } }
+    post: { summary: Aktywacja licencji platformy, parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '201': { description: Aktywowano } } }
+
+  /tenants/{tenantId}/webhooks:
+    post: { summary: Rejestracja webhooka (HMAC) — automatyzacja/CRM, parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '201': { description: Utworzono } } }
+
+  /tenants/{tenantId}/audit:
+    get: { summary: Audit Log (append-only), parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '200': { description: Wpisy } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    TenantId: { name: tenantId, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties: { email: { type: string }, password: { type: string } }
+    TokenPair:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        mfaRequired: { type: boolean }
+    Device:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        connector: { type: string, enum: [tcp, udp, serial, usbip, j2534, socketcan] }
+        online: { type: boolean }
+        busy: { type: boolean }
+    AccessToken:
+      type: object
+      properties:
+        code: { type: string }
+        link: { type: string }
+        qr: { type: string, description: data-URL PNG }
+        expiresAt: { type: string, format: date-time }

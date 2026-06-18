@@ -40,3 +40,25 @@
 3. **Panel WWW: licznik aktywnych sesji OBD** (kto teraz diagnozuje). UX/diagnostyka.
 4. **Auto-test po stronie mechanika** — „połączono z autem" (zielone) zaraz po starcie.
 5. **D2 rebranding** + ujednolicenie nazw (`reklama` → `kluczyki`). Czytelność.
+
+---
+
+## Blueprint enterprise (v2) — Faza M0 (fundament)
+
+Na życzenie „przebuduj do wersji produkcyjnej klasy enterprise" dostarczono **kompletny projekt
+produkcyjny + szkielet fundamentu** (pełny kod to build etapowy wg roadmapy — nie jednorazowa
+generacja). Pliki:
+- `docs/ENTERPRISE-AUDIT.md` — audyt enterprise, lista luk E1–E12, prawda o transporcie (USB/J2534).
+- `docs/ARCHITECTURE.md` — architektura (control/data plane, Go+NestJS, konektory, tryby A–D,
+  bezpieczeństwo TLS/MFA/RBAC/audyt, monitoring, skala/failover, model danych).
+- `docs/MIGRATION.md` — struktura katalogów + migracja strangler-fig (Fazy 0–6).
+- `docs/ROADMAP.md` — kamienie M0–M6 z szacunkami.
+- `platform/` — szkielet: `db/schema.sql`, `src/connectors/{connector,tcp}.ts`, `openapi.yaml`,
+  `deploy/docker-compose.yml`, `.env.example`, `README.md`.
+
+**Status:** M0 gotowy. Następny rekomendowany krok do implementacji: **M1 (Control Plane MVP:
+NestJS + Postgres + RBAC/MFA/JWT)** — lub szybka wygrana: **CI dla v1**.
+
+**Kluczowe ograniczenie (do świadomej akceptacji):** „dowolne oprogramowanie bez modyfikacji"
+działa wprost tylko dla urządzeń **sieciowych**; USB/Serial/J2534/CAN wymagają **wirtualnego
+urządzenia klienckiego** (M4) — szczegóły w `docs/ENTERPRISE-AUDIT.md §0`.
