@@ -58,12 +58,12 @@ function Start-Tunnel {
   $cf = Join-Path $Root "cloudflared.exe"
   if (-not [string]::IsNullOrWhiteSpace($TunnelToken)) {
     # Tryb nazwany: staly adres (Twoja domena w Cloudflare).
-    $args = "tunnel run --token $TunnelToken"
+    $cfArgs = "tunnel run --token $TunnelToken"
   } else {
     # Tryb szybki: losowy adres *.trycloudflare.com, bez konta.
-    $args = "tunnel --no-autoupdate --url $LocalTarget"
+    $cfArgs = "tunnel --no-autoupdate --url $LocalTarget"
   }
-  Start-Process -FilePath $cf -ArgumentList $args `
+  Start-Process -FilePath $cf -ArgumentList $cfArgs `
     -WorkingDirectory $Root -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput $TunnelLog -RedirectStandardError (Join-Path $LogDir "cloudflared.err.log")
 }
@@ -169,7 +169,10 @@ try {
         if ($newUrl -and $newUrl -ne $publicUrl) {
           $publicUrl = $newUrl
           Write-ShareInfo $publicUrl
-          Write-Host ("[$(Get-Date -Format HH:mm:ss)] Nowy adres: " + $publicUrl) -ForegroundColor Yellow
+          # Odswiez tez strone z kodem QR, by nie prowadzila do starego adresu.
+          $sharePage = Join-Path $Root "UDOSTEPNIJ-PRACOWNIKOM.html"
+          try { node "src/share-page.js" --mode shared --url $publicUrl --password $Password --out $sharePage | Out-Null } catch {}
+          Write-Host ("[$(Get-Date -Format HH:mm:ss)] Nowy adres: " + $publicUrl + " (odswiezono link, haslo i kod QR)") -ForegroundColor Yellow
         }
       }
     }

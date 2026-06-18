@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "obd-client": "node src/obd-client.js"
+    "obd-client": "node src/obd-client.js",
+    "test": "node test/run.js"
   },
   "engines": {
     "node": ">=18"

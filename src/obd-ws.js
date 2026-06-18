@@ -69,13 +69,21 @@ function isAuthorized(req) {
 
 /**
  * Adres IP klienta dla limitu prob (lockout). Za tunelem Cloudflare wszystkie
- * polaczenia przychodza z 127.0.0.1, dlatego - gdy ufamy proxy - bierzemy
- * prawdziwy adres z naglowka X-Forwarded-For (pierwszy wpis).
+ * polaczenia przychodza z 127.0.0.1, dlatego - gdy ufamy proxy - ustalamy
+ * prawdziwy adres klienta. WAZNE: nie bierzemy LEWEGO wpisu X-Forwarded-For,
+ * bo klient moglby go podrobic i obejsc lockout. Uzywamy:
+ *   1) CF-Connecting-IP (Cloudflare wpisuje tu zawsze prawdziwy adres klienta),
+ *   2) w razie braku - PRAWEGO wpisu XFF (hop dodany przez zaufane proxy).
  */
 function clientIp(req) {
   if (config.trustProxy) {
+    const cf = req.headers['cf-connecting-ip'];
+    if (cf) return String(cf).trim();
     const xff = req.headers['x-forwarded-for'];
-    if (xff) return String(xff).split(',')[0].trim();
+    if (xff) {
+      const parts = String(xff).split(',').map((s) => s.trim()).filter(Boolean);
+      if (parts.length) return parts[parts.length - 1];
+    }
   }
   return (req.socket && req.socket.remoteAddress) || 'unknown';
 }

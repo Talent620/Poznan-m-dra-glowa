@@ -13,6 +13,7 @@ obd-polaczenie.txt
 RAPORT-POLACZEN.html
 UDOSTEPNIJ-PRACOWNIKOM.html
 UDOSTEPNIJ-PRYWATNY.html
+WYNIK-DIAGNOZY.txt
 
 # Narzedzie tunelu (pobierane przez setup.ps1)
 cloudflared.exe

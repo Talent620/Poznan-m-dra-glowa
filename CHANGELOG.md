@@ -2,6 +2,21 @@
 
 Lista zmian. Najnowsze na gorze.
 
+## Audyt senior-architekta: testy + utwardzenia (Faza 2)
+
+- **Testy automatyczne** (`test/run.js`, `npm test`): 29 testow - jednostkowe
+  (`devices`, `auth`, `config.validate`) i integracyjne (logowanie/cookie/CSRF,
+  most OBD przez WebSocket, blokada „zajete", lockout). Bez zewnetrznych frameworkow.
+- **Lockout odporny na podrabianie IP** (`obd-ws.js`): zamiast lewego wpisu
+  `X-Forwarded-For` uzywamy `CF-Connecting-IP` lub prawego (zaufanego) wpisu -
+  nie da sie obejsc blokady, podstawiajac falszywy adres.
+- **`run.ps1`**: po zmianie adresu tunelu odswieza tez strone z kodem QR
+  (wczesniej QR prowadzil do starego adresu); `$args` -> `$cfArgs` (kolizja ze
+  zmienna automatyczna PowerShell).
+- **`run-obd.ps1`**: nie zapisuje juz HASLA na dysk - pamieta tylko LINK.
+- `.gitignore`: dodany `WYNIK-DIAGNOZY.txt`.
+- Dokumenty audytu: `AUDIT.md`, `PROGRESS.md`.
+
 ## Auto-test adaptera po ustawieniu
 
 - Nowy szybki tester `src/check-device.js`: sprawdza, czy komputer WIDZI

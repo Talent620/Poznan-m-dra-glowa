@@ -40,12 +40,12 @@ if (-not (Test-Path (Join-Path $Root "node_modules\ws"))) {
   npm install --no-fund --no-audit | Out-Null
 }
 
-# --- Wczytaj poprzednie ustawienia, jesli sa -------------------------------
-$prevLink = ""; $prevKey = ""
+# --- Wczytaj poprzedni LINK, jesli jest ------------------------------------
+# UWAGA: dla bezpieczenstwa NIE zapamietujemy hasla na dysku - tylko link.
+$prevLink = ""
 if (Test-Path $SaveFile) {
   foreach ($line in Get-Content $SaveFile) {
     if ($line -match "^LINK=(.*)$") { $prevLink = $Matches[1].Trim() }
-    if ($line -match "^KEY=(.*)$")  { $prevKey  = $Matches[1].Trim() }
   }
 }
 
@@ -63,20 +63,15 @@ if ([string]::IsNullOrWhiteSpace($link)) {
 }
 $link = $link.Trim().TrimEnd('/')
 
-# --- Zapytaj o haslo --------------------------------------------------------
-if ($prevKey) {
-  $key = Read-Host "Podaj HASLO (Enter = uzyj ostatniego)"
-  if ([string]::IsNullOrWhiteSpace($key)) { $key = $prevKey }
-} else {
-  $key = Read-Host "Podaj HASLO (wspolne, to samo co do strony)"
-}
+# --- Zapytaj o haslo (NIE zapisujemy go na dysk) ----------------------------
+$key = Read-Host "Podaj HASLO (wspolne, to samo co do strony)"
 if ([string]::IsNullOrWhiteSpace($key)) {
   Write-Host "[BLAD] Bez hasla serwer nie wpusci polaczenia." -ForegroundColor Red
   exit 1
 }
 
-# Zapamietaj na przyszlosc.
-Set-Content -Path $SaveFile -Value @("LINK=$link", "KEY=$key") -Encoding UTF8
+# Zapamietujemy tylko LINK (haslo wpisujesz za kazdym razem - bezpieczniej).
+Set-Content -Path $SaveFile -Value @("LINK=$link") -Encoding UTF8
 
 # --- Pobierz liste urzadzen z serwera ---------------------------------------
 Write-Host ""
