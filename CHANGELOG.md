@@ -2,6 +2,19 @@
 
 Lista zmian. Najnowsze na gorze.
 
+## Tryb OFFLINE / tylko moja siec (prywatne udostepnianie, bez internetu)
+
+- Nowy `scripts/run-offline.ps1`: uruchamia brame BEZ publicznego linku (bez Cloudflare).
+  Dostep dziala wylacznie w Twojej sieci - LAN (ta sama siec) albo prywatny Tailscale.
+  Pokazuje gotowy adres lokalny (LAN IP / nazwa Tailscale) + haslo i zapisuje
+  `OFFLINE-DOSTEP.txt`. Brama nasluchuje na 0.0.0.0 (nadal chroniona haslem + lockout).
+- Kreator: nowa, ZALECANA opcja „W DOMU - OFFLINE / tylko moja siec" (publiczny link
+  zostaje jako osobna opcja). Pracownik laczy sie jak zwykle (plik 8), wklejajac
+  adres lokalny zamiast publicznego linku.
+- `.gitignore`: `OFFLINE-DOSTEP.txt`.
+- Zasada bez zmian: narzedzie TYLKO przekazuje surowe polaczenie i NIE dotyka licencji
+  ani zabezpieczen cudzego oprogramowania diagnostycznego (nie obchodzi dongli/aktywacji).
+
 ## Audyt senior-architekta: testy + utwardzenia (Faza 2)
 
 - **Testy automatyczne** (`test/run.js`, `npm test`): 29 testow - jednostkowe

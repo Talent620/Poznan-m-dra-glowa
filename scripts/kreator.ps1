@@ -83,8 +83,9 @@ function Find-Adapter {
 # ============================================================================
 #  TRYB: W DOMU (szef udostepnia adapter)
 # ============================================================================
-function Run-Home {
-  Big "JESTEM W DOMU - udostepniam auto przez internet" 'Green'
+function Run-Home([bool]$offline = $true) {
+  if ($offline) { Big "W DOMU - OFFLINE / tylko moja siec (nic publicznego)" 'Green' }
+  else          { Big "W DOMU - przez internet (publiczny link)" 'Green' }
   if (-not (Ensure-Installed)) { Wait-Enter; return }
 
   Write-Host "Upewnij sie, ze adapter OBD jest WPIETY do auta i WLACZONY (swieci)." -ForegroundColor Gray
@@ -145,13 +146,22 @@ function Run-Home {
     if ($dalej -match '^(n|nie|no)$') { Wait-Enter; return }
   }
 
-  Step "Wlaczam udostepnianie. Otworzy sie NOWE okno z LINKIEM, HASLEM i kodem QR."
-  Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Root 'scripts\run.ps1') + "`"")
-
-  Big "GOTOWE!" 'Green'
-  Write-Host "  1. W NOWYM oknie pojawi sie LINK i HASLO (oraz strona z kodem QR)." -ForegroundColor White
-  Write-Host "  2. ZOSTAW tamto okno OTWARTE - dziala, dopoki jest otwarte." -ForegroundColor Yellow
-  Write-Host "  3. Wyslij mechanikowi: LINK + HASLO." -ForegroundColor White
+  if ($offline) {
+    Step "Wlaczam tryb OFFLINE (bez internetu). Otworzy sie NOWE okno z adresem lokalnym."
+    Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Root 'scripts\run-offline.ps1') + "`"")
+    Big "GOTOWE! (OFFLINE - nic publicznego)" 'Green'
+    Write-Host "  1. W NOWYM oknie pojawi sie ADRES w Twojej sieci (LAN / Tailscale) i HASLO." -ForegroundColor White
+    Write-Host "  2. ZOSTAW tamto okno OTWARTE - dziala, dopoki jest otwarte." -ForegroundColor Yellow
+    Write-Host "  3. Daj pracownikowi: ten ADRES + HASLO (wkleja je w pliku nr 8 jako LINK)." -ForegroundColor White
+    Write-Host "  Nic nie jest publiczne - dziala tylko w Twojej sieci." -ForegroundColor DarkGray
+  } else {
+    Step "Wlaczam udostepnianie przez internet. Otworzy sie NOWE okno z LINKIEM, HASLEM i kodem QR."
+    Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Root 'scripts\run.ps1') + "`"")
+    Big "GOTOWE!" 'Green'
+    Write-Host "  1. W NOWYM oknie pojawi sie LINK i HASLO (oraz strona z kodem QR)." -ForegroundColor White
+    Write-Host "  2. ZOSTAW tamto okno OTWARTE - dziala, dopoki jest otwarte." -ForegroundColor Yellow
+    Write-Host "  3. Wyslij mechanikowi: LINK + HASLO." -ForegroundColor White
+  }
   Wait-Enter
 }
 
@@ -183,30 +193,35 @@ function Run-Field {
   Big "KREATOR - poprowadze Cie krok po kroku" 'Magenta'
   Write-Host "  Wybierz, kim jestes. Nic nie zepsujesz - mozesz probowac." -ForegroundColor Gray
   Write-Host ""
-  Write-Host "   [1]  JESTEM W DOMU" -ForegroundColor White
-  Write-Host "        Mam auto/adapter OBD i chce go udostepnic mechanikowi przez internet."
+  Write-Host "   [1]  JESTEM W DOMU - OFFLINE / tylko moja siec  (zalecane)" -ForegroundColor White
+  Write-Host "        Udostepniam OBD pracownikowi PRYWATNIE - nic publicznego, nic w internecie."
+  Write-Host "        Dziala w Twojej sieci (LAN warsztatu) albo przez prywatny Tailscale."
   Write-Host ""
-  Write-Host "   [2]  JESTEM W TERENIE" -ForegroundColor White
-  Write-Host "        Dostalem LINK i HASLO i chce polaczyc sie z autem w domu."
+  Write-Host "   [2]  JESTEM W DOMU - przez internet (publiczny link)" -ForegroundColor White
+  Write-Host "        Tworzy publiczny link + QR (wygodne z dowolnego miejsca)."
   Write-Host ""
-  Write-Host "   [3]  POMOC / pelna instrukcja" -ForegroundColor White
-  Write-Host "   [4]  WIECEJ USTAWIEN (menu dla zaawansowanych)" -ForegroundColor DarkGray
+  Write-Host "   [3]  JESTEM W TERENIE" -ForegroundColor White
+  Write-Host "        Dostalem ADRES/LINK i HASLO i chce polaczyc sie z autem."
+  Write-Host ""
+  Write-Host "   [4]  POMOC / pelna instrukcja" -ForegroundColor White
+  Write-Host "   [5]  WIECEJ USTAWIEN (menu dla zaawansowanych)" -ForegroundColor DarkGray
   Write-Host ""
   Write-Host "   [0]  Zamknij" -ForegroundColor White
   Write-Host ""
   $wybor = Read-Host "Wpisz cyfre i nacisnij Enter"
 
   switch ($wybor.Trim()) {
-    '1' { Run-Home }
-    '2' { Run-Field }
-    '3' {
+    '1' { Run-Home $true }
+    '2' { Run-Home $false }
+    '3' { Run-Field }
+    '4' {
       $help = Join-Path $Root "INSTRUKCJA-PROSTA.txt"
       if (Test-Path $help) { Start-Process notepad.exe $help } else { Warn "Brak pliku instrukcji." }
     }
-    '4' {
+    '5' {
       & (Join-Path $Root "scripts\menu.ps1")
     }
     '0' { Write-Host "`nDo zobaczenia!" -ForegroundColor Cyan; break mainLoop }
-    default { Warn "Nie rozumiem '$wybor'. Wpisz 1, 2, 3, 4 albo 0." ; Start-Sleep -Seconds 1 }
+    default { Warn "Nie rozumiem '$wybor'. Wpisz 1, 2, 3, 4, 5 albo 0." ; Start-Sleep -Seconds 1 }
   }
 }
