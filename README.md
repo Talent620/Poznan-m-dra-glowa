@@ -14,12 +14,27 @@ Obie wersje korzystaja z tej samej bramy i tego samego pliku `.env`. Mozesz miec
 
 ---
 
-## Najprosciej: jedno MENU (polecane dla osob nietechnicznych)
+## Najprosciej: jeden plik (dziala nawet dla zupelnie poczatkujacych) ✅
+
+Kliknij dwa razy **`0 - KLIKNIJ TUTAJ (zacznij od tego).bat`**. Otworzy sie **kreator**,
+ktory zadaje tylko jedno pytanie — kim jestes:
+
+- **1 = JESTEM W DOMU** — chce udostepnic auto/adapter mechanikowi,
+- **2 = JESTEM W TERENIE** — mam link i haslo, lacze sie z autem.
+
+Reszte kreator robi **sam**: przy pierwszym razie **sam sie instaluje**, **sam znajduje
+adapter OBD** w sieci, **sam sprawdza, czy go widzi** (zielone „WSZYSTKO GRA" albo czerwone
+ostrzezenie z podpowiedzia), **sam uruchamia** udostepnianie i **pokazuje LINK + HASLO + kod
+QR**. Nie trzeba niczego wpisywac z palca ani znac adresow. Gdy cos nie dziala — kliknij ten
+sam plik jeszcze raz, nic nie zepsujesz.
+
+## Dla zaawansowanych: pelne MENU
 
 Kliknij dwa razy **`MENU - kliknij tutaj.bat`**. Otworzy sie lista opcji
 (instalacja, ustawienia, trzy tryby udostepniania, autostart, raport) — wybierasz
-numer i Enter. Kazda pozycja ma opis, co robi. Gdy cos nie dziala — wybierz
-opcje **1 (ZAINSTALUJ / NAPRAW)**, mozna powtarzac bez obaw.
+numer i Enter. Kazda pozycja ma opis, co robi. Jesli cos nie jest zainstalowane, menu
+**samo to doinstaluje**. Gdy cos nie dziala — wybierz opcje **1 (ZAINSTALUJ / NAPRAW)**,
+mozna powtarzac bez obaw.
 
 Konfigurator (opcja 2 w menu) pyta prostym jezykiem, co chcesz udostepnic, i sam
 zapisuje ustawienia — **nie trzeba recznie edytowac pliku `.env`**.
@@ -159,37 +174,93 @@ wylacznie Twoje konto i urzadzenia, ktore do niego dodasz.
 
 ---
 
-## Wersja URZADZENIE — udostepnij sprzet (np. interfejs OBD2) w terenie
+## Wersja OBD przez LINK — najprostsza, dziala przez darmowy Cloudflare ✅
 
-Gdy chcesz dosiegnac nie strony, lecz **urzadzenia sieciowego** stojacego w domu
-(np. bezprzewodowy interfejs diagnostyczny OBD2), uzyj:
+> To jest rozwiazanie problemu „strona dziala, ale **OBD sie nie przekazuje**".
+
+Surowy port TCP adaptera OBD (np. WiFi/ELM327 na porcie 35000) **nie przechodzi**
+przez darmowy tunel Cloudflare, bo ten obsluguje tylko HTTP. Dlatego sama strona
+sie otwiera, ale diagnostyka nie laczy sie z autem.
+
+Rozwiazanie: opakowujemy ruch OBD w **WebSocket** (to tez HTTP), wiec idzie przez
+**ten sam darmowy link**, ktory juz masz — **bez Tailscale, bez routera**.
+
+```
+[program diagnostyczny u mechanika] --TCP--> [klient OBD na laptopie]
+        ==WSS (Twoj link Cloudflare /obd)==>  [brama w domu] --TCP--> [OBD2 w domu]
+```
+
+> **Krok po kroku, bardzo prosto:** patrz plik **`JAK-POLACZYC-OBD.txt`**.
+
+**W DOMU (raz):** ustaw urzadzenia OBD przez MENU → `2` (USTAW) → możesz dodać
+**wiele urzadzen** (kilka aut/adapterow). Zapisuje sie to w `.env` jako:
+
+```ini
+# wiele urzadzen: nazwa=adres:port, rozdzielone srednikiem
+DEVICES=warsztat1=192.168.0.10:35000; warsztat2=192.168.0.11:35000
+# albo jedno "po staremu":
+DEVICE_HOST=192.168.0.10
+DEVICE_PORT=35000
+```
+
+Uruchom wersje dla pracownikow (`.\scripts\run.ps1` albo **`2 - START dla
+pracownikow.bat`**). Gdy sa skonfigurowane urzadzenia, brama **automatycznie**
+wlacza most OBD na sciezce `/obd` tego samego linku. Wysylasz mechanikowi
+**link + haslo** (i nazwy urzadzen, jesli masz ich kilka).
+
+**W TERENIE (mechanik na laptopie):** uruchamia **`8 - Polacz OBD w terenie
+(mechanik).bat`** (albo `.\scripts\run-obd.ps1`), wkleja **link** i **haslo**.
+Skrypt pobiera **liste urzadzen** i pozwala wybrac jedno albo **wszystkie naraz**
+(każde dostaje swoj port: `35000`, `35001`, ...). Potem w programie diagnostycznym
+(A18-TES, VCDS, itp.) wybiera polaczenie **„po sieci / WiFi / TCP"** i wpisuje
+`127.0.0.1` oraz wskazany port.
+
+Dla diagnostyki dbamy o jakosc polaczenia: **TCP_NODELAY** (male komendy ELM327
+ida natychmiast, bez ~40 ms opoznienia Nagle'a), **brak kompresji** WebSocket,
+**blokada 1 klient na 1 urzadzenie** (adaptery ELM327 obsluguja jedno polaczenie
+naraz) oraz **ping/pong** wykrywajacy zerwane polaczenia.
+
+**Nie znasz adresu/portu adaptera?** Uruchom **`9 - Znajdz adapter OBD.bat`**
+(albo `node src/scan-obd.js`). Skaner przeszukuje siec domowa i typowe porty
+diagnostyczne — **`35000`** (WiFi ELM327) i **`13400`** (DoIP, np. AIR OBD2 i inne
+bramy) — i podaje gotowy wpis `DEVICES=...`.
+
+**Panel OBD (interfejs):** gdy skonfigurujesz urzadzenia, po otwarciu linku
+w przegladarce (i zalogowaniu) widzisz **panel** z lista urzadzen, statusem
+**online/offline** (aktywny test dostepnosci) i **zajete/wolne** — odswiezany na
+biezaco. Endpointy: `GET /obd-devices` (nazwy + zajetosc) i `GET /obd-status`
+(status z testem dostepnosci), oba chronione haslem/sesja.
+
+> Mechanik tez potrzebuje Node.js — wystarczy, ze raz uruchomi
+> **`1 - INSTALACJA.bat`** (instaluje Node i czesci programu).
+
+> ⚖️ **Licencja:** to narzedzie tylko przekazuje surowe polaczenie OBD i **nie
+> sprawdza licencji** Twojego programu diagnostycznego. Czy WOLNO go tak
+> udostepniac, zalezy od jego licencji — szczegoly w `JAK-POLACZYC-OBD.txt`
+> (sekcja o licencji). Nie obchodzimy zabezpieczen (kluczy USB, aktywacji).
+
+---
+
+## Wersja URZADZENIE przez Tailscale (alternatywa, prywatna siec)
+
+Gdy wolisz prywatna siec zamiast publicznego linku, mozesz udostepnic surowy port
+przez **Tailscale**:
 
 ```powershell
 .\scripts\run-device.ps1
 ```
 
-albo pliku **`7 - Udostepnij urzadzenie w terenie.bat`**.
-
-Wczesniej ustaw w `.env`:
-
-```ini
-DEVICE_HOST=192.168.0.50   # adres urzadzenia w domowej sieci (lub 127.0.0.1)
-DEVICE_PORT=35000          # port urzadzenia (dla adapterow WiFi OBD czesto 35000)
-```
-
-Jak to dziala: na serwerze startuje **most TCP** (`src/tcp-bridge.js`), ktory
-przekazuje ruch do urzadzenia, a **Tailscale** udostepnia ten port wylacznie
-w Twojej prywatnej sieci. W terenie laczysz sie programem diagnostycznym pod
-adres Tailscale serwera i podany port — tak, jakbys stal obok urzadzenia.
+albo plik **`7 - Udostepnij urzadzenie w terenie.bat`**. Wczesniej ustaw `.env`
+(`DEVICE_HOST`, `DEVICE_PORT`). Na serwerze startuje **most TCP**
+(`src/tcp-bridge.js`), a Tailscale udostepnia port wylacznie w Twojej sieci.
+Adres do wpisania w programie zapisuje sie w pliku **`DOSTEP-URZADZENIE.txt`**.
 
 ```
 [program diagnostyczny w terenie] --(Tailscale)--> [most TCP na serwerze] --> [OBD2 w domu]
 ```
 
-Adres do wpisania w programie zapisuje sie w pliku **`DOSTEP-URZADZENIE.txt`**.
-
-> Uwaga: surowy port TCP wymaga **Tailscale** (nie dziala przez darmowy tunel
-> Cloudflare, ktory obsluguje tylko HTTP/strony).
+> Ta wersja wymaga **Tailscale** na obu koncach. Jesli chcesz prosciej i przez
+> zwykly link — uzyj wersji „OBD przez LINK" powyzej.
 
 ---
 
@@ -225,6 +296,10 @@ Wylaczenie autostartu:
 | `PORT` | port lokalny bramy (domyslnie 8080) |
 | `UPSTREAM_URL` | adres Twojego narzedzia, np. `http://127.0.0.1:3000` |
 | `STATIC_DIR` | alternatywnie: folder z plikami do serwowania |
+| `DEVICES` | wiele urzadzen OBD: `nazwa=adres:port; nazwa2=adres2:port2` — wlacza most OBD `/obd` |
+| `DEVICE_HOST` | (alternatywa, jedno urzadzenie) adres adaptera OBD, np. `192.168.0.10` |
+| `DEVICE_PORT` | (alternatywa, jedno urzadzenie) port adaptera (WiFi/ELM327 czesto `35000`) |
+| `DEVICE_NAME` | (alternatywa) nazwa pojedynczego urzadzenia (domyslnie `domyslne`) |
 | `ACCESS_PASSWORD` | wspolne haslo dostepu (generowane automatycznie) |
 | `SESSION_SECRET` | sekret podpisu sesji (generowany automatycznie) |
 | `SESSION_TTL_HOURS` | jak dlugo wazna jest sesja po zalogowaniu |
@@ -238,9 +313,17 @@ Plik `.env` jest prywatny — nie trafia do gita i nie opuszcza Twojego komputer
 
 - Brama nasluchuje tylko na `127.0.0.1` — nie wystawiamy nic bezposrednio do internetu.
 - Caly ruch zewnetrzny idzie przez **HTTPS** (Cloudflare / Tailscale).
-- Haslo porownywane odpornie na ataki czasowe; limit prob logowania chroni przed zgadywaniem.
+- Haslo porownywane odpornie na ataki czasowe; **limit prob (lockout)** chroni przed zgadywaniem — zarowno na stronie logowania, jak i na mostie OBD (`/obd`, `/obd-devices`, `/obd-status`).
+- Haslo do OBD jedzie w **naglowku `x-obd-key`**, a nie w adresie — nie trafia do logow tunelu. (Adres `?key=...` jest nadal akceptowany dla zgodnosci wstecz, ale klient go nie uzywa.)
+- Ciasteczko sesji: `HttpOnly` + `SameSite=Lax`; flaga `Secure` dodawana **automatycznie**, gdy polaczenie idzie po HTTPS (tunel). Dzieki temu logowanie dziala tez przy **tescie lokalnym po `http://`** w sieci LAN.
+- Formularz logowania chroniony przed **CSRF** (sprawdzenie `Origin` + `SameSite=Lax`).
 - Naglowek `X-Robots-Tag: noindex` — serwis nie trafia do wyszukiwarek.
 - **Router pozostaje nietkniety** — brak otwartych portow, brak ryzyka wystawienia sieci domowej.
+
+> **Test lokalny (LAN, bez tunelu):** mozesz otworzyc `http://127.0.0.1:8080` (lub adres LAN
+> komputera) w przegladarce i zalogowac sie tym samym haslem — flaga `Secure` nie zostanie
+> wtedy dodana, wiec logowanie zadziala po zwyklym `http://`. W normalnej pracy (przez tunel
+> Cloudflare) ruch i tak idzie po HTTPS.
 
 > Uwaga prawna: udostepniajac narzedzie pracownikom upewnij sie, ze masz do tego
 > prawo (licencja narzedzia) i ze konfiguracja jest zgodna z polityka Twojej firmy.

@@ -31,8 +31,25 @@ function Get-EnvValue([string]$key) {
   return ($line -replace "^\s*$key\s*=", "").Trim()
 }
 
-$DeviceHost = Get-EnvValue "DEVICE_HOST"; if ([string]::IsNullOrWhiteSpace($DeviceHost)) { $DeviceHost = "127.0.0.1" }
+$DeviceHost = Get-EnvValue "DEVICE_HOST"
 $DevicePort = Get-EnvValue "DEVICE_PORT"
+
+# Jesli ustawiono wiele urzadzen (DEVICES), a brak pojedynczego DEVICE_PORT,
+# bierzemy PIERWSZE urzadzenie z listy (tryb Tailscale udostepnia jedno naraz).
+if ([string]::IsNullOrWhiteSpace($DevicePort)) {
+  $devices = Get-EnvValue "DEVICES"
+  if (-not [string]::IsNullOrWhiteSpace($devices)) {
+    $first = ($devices -split ';')[0].Trim()
+    if ($first -match '=') { $first = ($first -split '=', 2)[1].Trim() }
+    if ($first -match '^(.+):(\d+)$') {
+      $DeviceHost = $Matches[1].Trim()
+      $DevicePort = $Matches[2].Trim()
+      Write-Host "[i] Uzywam pierwszego urzadzenia z listy DEVICES: $DeviceHost`:$DevicePort" -ForegroundColor DarkGray
+    }
+  }
+}
+
+if ([string]::IsNullOrWhiteSpace($DeviceHost)) { $DeviceHost = "127.0.0.1" }
 $ListenPort = Get-EnvValue "DEVICE_LISTEN_PORT"; if ([string]::IsNullOrWhiteSpace($ListenPort)) { $ListenPort = $DevicePort }
 
 Write-Host "============================================" -ForegroundColor Magenta
