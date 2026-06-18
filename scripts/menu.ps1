@@ -165,11 +165,14 @@ function Show-Menu {
     '6' {
       Write-Host ""
       Write-Host "Ktora wersja ma uruchamiac sie SAMA po starcie Windows?" -ForegroundColor White
-      Write-Host "  1) Dla pracownikow"
-      Write-Host "  2) Tylko ja (zdalnie z domu)"
-      $m = Read-Host "Wpisz 1 albo 2"
+      Write-Host "  1) Dla pracownikow (publiczny link)"
+      Write-Host "  2) Tylko ja (zdalnie z domu, Tailscale)"
+      Write-Host "  3) OFFLINE / tylko moja siec (bez internetu)" -ForegroundColor Green
+      $m = Read-Host "Wpisz 1, 2 albo 3"
       if ($m.Trim() -eq '2') {
         & (Join-Path $Root "scripts\install-autostart.ps1") -Mode private
+      } elseif ($m.Trim() -eq '3') {
+        & (Join-Path $Root "scripts\install-autostart.ps1") -Mode offline
       } else {
         & (Join-Path $Root "scripts\install-autostart.ps1")
       }

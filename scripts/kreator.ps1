@@ -154,6 +154,12 @@ function Run-Home([bool]$offline = $true) {
     Write-Host "  2. ZOSTAW tamto okno OTWARTE - dziala, dopoki jest otwarte." -ForegroundColor Yellow
     Write-Host "  3. Daj pracownikowi: ten ADRES + HASLO (wkleja je w pliku nr 8 jako LINK)." -ForegroundColor White
     Write-Host "  Nic nie jest publiczne - dziala tylko w Twojej sieci." -ForegroundColor DarkGray
+    Write-Host ""
+    $auto = Read-Host "Chcesz, zeby tryb OFFLINE wlaczal sie SAM po starcie Windows? (t = tak)"
+    if ($auto -match '^(t|tak|y|yes)$') {
+      & (Join-Path $Root "scripts\install-autostart.ps1") -Mode offline
+      Write-Host "[OK] Od teraz brama OFFLINE wstanie sama po kazdym zalogowaniu do Windows." -ForegroundColor Green
+    }
   } else {
     Step "Wlaczam udostepnianie przez internet. Otworzy sie NOWE okno z LINKIEM, HASLEM i kodem QR."
     Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Root 'scripts\run.ps1') + "`"")

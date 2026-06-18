@@ -2,6 +2,14 @@
 
 Lista zmian. Najnowsze na gorze.
 
+## Autostart trybu OFFLINE (brama sama wstaje po starcie Windows)
+
+- `install-autostart.ps1`: nowy tryb `-Mode offline` (zadanie `KluczykiPoznanOffline`)
+  uruchamia `run-offline.ps1` po zalogowaniu, z auto-restartem.
+- `uninstall-autostart.ps1`: usuwa tez zadanie offline.
+- Kreator: po starcie trybu OFFLINE pyta „wlaczyc autostart?" (jedno t/Enter).
+- MENU (opcja autostartu): dodana pozycja „3) OFFLINE / tylko moja siec".
+
 ## Tryb OFFLINE / tylko moja siec (prywatne udostepnianie, bez internetu)
 
 - Nowy `scripts/run-offline.ps1`: uruchamia brame BEZ publicznego linku (bez Cloudflare).

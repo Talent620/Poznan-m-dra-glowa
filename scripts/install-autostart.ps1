@@ -10,7 +10,7 @@
 # ============================================================================
 
 param(
-  [ValidateSet('shared', 'private')]
+  [ValidateSet('shared', 'private', 'offline')]
   [string]$Mode = 'shared'
 )
 
@@ -20,6 +20,9 @@ $Root = Split-Path -Parent $PSScriptRoot
 if ($Mode -eq 'private') {
   $RunScript = Join-Path $Root "scripts\run-private.ps1"
   $TaskName  = "KluczykiPoznanPrivate"
+} elseif ($Mode -eq 'offline') {
+  $RunScript = Join-Path $Root "scripts\run-offline.ps1"
+  $TaskName  = "KluczykiPoznanOffline"
 } else {
   $RunScript = Join-Path $Root "scripts\run.ps1"
   $TaskName  = "KluczykiPoznan"
