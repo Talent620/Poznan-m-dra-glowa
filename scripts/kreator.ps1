@@ -122,6 +122,29 @@ function Run-Home {
     }
   }
 
+  # --- AUTO-TEST: czy komputer naprawde widzi adapter? --------------------
+  Step "Sprawdzam, czy komputer WIDZI adapter (szybki test)..."
+  & node (Join-Path $Root "src\check-device.js")
+  $rc = $LASTEXITCODE
+  if ($rc -eq 0) {
+    Big "WSZYSTKO GRA - widze adapter! Mozna udostepniac." 'Green'
+  } elseif ($rc -eq 3) {
+    Warn "Czesc adapterow widze, a czesci NIE (te z [X] wyzej)."
+    Write-Host "   Te widoczne zadzialaja; reszte sprawdz: czy wlaczone i w tej samej sieci WiFi." -ForegroundColor Gray
+  } elseif ($rc -eq 2) {
+    Warn "Nie ustawiono adaptera - uruchamiam sam serwer (adapter dodasz w MENU)."
+  } else {
+    Big "NIE WIDZE ADAPTERA" 'Red'
+    Write-Host "  Najczestsze przyczyny (sprawdz po kolei):" -ForegroundColor White
+    Write-Host "   - adapter nie jest wpiety do auta albo nie swieci," -ForegroundColor Gray
+    Write-Host "   - adapter i komputer sa w INNEJ sieci WiFi (musza byc w tej samej)," -ForegroundColor Gray
+    Write-Host "   - adapter robi WLASNA siec WiFi - podlacz do niej komputer," -ForegroundColor Gray
+    Write-Host "   - zly adres/port - sprobuj jeszcze raz (kreator poszuka ponownie)." -ForegroundColor Gray
+    Write-Host ""
+    $dalej = Read-Host "Uruchomic mimo to? (Enter = TAK / wpisz n, by przerwac)"
+    if ($dalej -match '^(n|nie|no)$') { Wait-Enter; return }
+  }
+
   Step "Wlaczam udostepnianie. Otworzy sie NOWE okno z LINKIEM, HASLEM i kodem QR."
   Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Root 'scripts\run.ps1') + "`"")
 

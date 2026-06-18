@@ -23,9 +23,10 @@ ktory zadaje tylko jedno pytanie — kim jestes:
 - **2 = JESTEM W TERENIE** — mam link i haslo, lacze sie z autem.
 
 Reszte kreator robi **sam**: przy pierwszym razie **sam sie instaluje**, **sam znajduje
-adapter OBD** w sieci, **sam uruchamia** udostepnianie i **pokazuje LINK + HASLO + kod QR**.
-Nie trzeba niczego wpisywac z palca ani znac adresow. Gdy cos nie dziala — kliknij ten sam
-plik jeszcze raz, nic nie zepsujesz.
+adapter OBD** w sieci, **sam sprawdza, czy go widzi** (zielone „WSZYSTKO GRA" albo czerwone
+ostrzezenie z podpowiedzia), **sam uruchamia** udostepnianie i **pokazuje LINK + HASLO + kod
+QR**. Nie trzeba niczego wpisywac z palca ani znac adresow. Gdy cos nie dziala — kliknij ten
+sam plik jeszcze raz, nic nie zepsujesz.
 
 ## Dla zaawansowanych: pelne MENU
 

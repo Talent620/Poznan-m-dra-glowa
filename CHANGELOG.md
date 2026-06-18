@@ -2,6 +2,13 @@
 
 Lista zmian. Najnowsze na gorze.
 
+## Auto-test adaptera po ustawieniu
+
+- Nowy szybki tester `src/check-device.js`: sprawdza, czy komputer WIDZI
+  skonfigurowany adapter (bez skanowania calej sieci). Kreator po ustawieniu
+  adaptera uruchamia go i pokazuje **zielone „WSZYSTKO GRA"** albo **czerwone
+  „NIE WIDZE ADAPTERA"** z prosta lista, co sprawdzic — zanim wlaczy udostepnianie.
+
 ## Maksymalne uproszczenie obslugi („zeby dziecko dalo rade")
 
 - Nowy **kreator** (`scripts/kreator.ps1`) + jeden plik startowy
